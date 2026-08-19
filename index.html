@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>glyph-matter</title>
+    <link rel="stylesheet" href="/src/demo/style.css" />
+  </head>
+  <body>
+    <aside>
+      <h1>glyph-matter</h1>
+      <p class="lede">
+        Live font sampling, or a shipped pack. Font size is the on-screen size
+        of the letters. Legibility is how hard the points try to remain a word.
+      </p>
+
+      <label>
+        text
+        <input id="text" type="text" value="milton" spellcheck="false" />
+      </label>
+
+      <label>
+        sampling mode
+        <select id="mode">
+          <option value="contour" selected>contour</option>
+          <option value="fill">fill</option>
+          <option value="both">both</option>
+        </select>
+      </label>
+
+      <label>
+        contour spacing
+        <span class="val" id="contourSpacingVal">5</span>
+        <input id="contourSpacing" type="range" min="2" max="24" value="5" />
+      </label>
+      <label>
+        fill spacing
+        <span class="val" id="fillSpacingVal">8</span>
+        <input id="fillSpacing" type="range" min="3" max="28" value="8" />
+      </label>
+      <label>
+        font size
+        <span class="val" id="fontSizeVal">180</span>
+        <input id="fontSize" type="range" min="48" max="320" value="180" />
+      </label>
+
+      <p class="section">animation</p>
+      <label>
+        kind
+        <select id="animation">
+          <option value="field" selected>field (scatter / gas / pointer)</option>
+          <option value="morph">word → word</option>
+        </select>
+      </label>
+      <label>
+        legibility
+        <span class="val" id="legibilityVal">1.00</span>
+        <input id="legibility" type="range" min="0" max="100" value="100" />
+      </label>
+      <label>
+        gas
+        <span class="val" id="gasVal">90</span>
+        <input id="gas" type="range" min="0" max="240" value="90" />
+      </label>
+      <div class="row">
+        <button id="scatter" type="button">scatter</button>
+        <button id="home" type="button">snap home</button>
+      </div>
+      <p class="hint">Move the pointer over the letters. Hold to push harder.</p>
+
+      <div id="morph-panel" hidden>
+        <label>
+          morph to
+          <input id="morphTo" type="text" value="matter" spellcheck="false" />
+        </label>
+        <div class="row">
+          <button id="morph" type="button">morph</button>
+        </div>
+        <label class="check">
+          <input id="morphLoop" type="checkbox" />
+          loop
+        </label>
+        <label class="check">
+          <input id="morphDissolve" type="checkbox" />
+          dissolve first (~0.3)
+        </label>
+        <p class="hint">
+          This retargets the rest pose. Field forces still apply.
+        </p>
+      </div>
+
+      <label>
+        font url
+        <input
+          id="fontUrl"
+          type="text"
+          spellcheck="false"
+          value="/fonts/EBGaramond-Regular.ttf"
+        />
+      </label>
+
+      <label class="file">
+        local font (.ttf / .otf)
+        <input id="fontFile" type="file" accept=".ttf,.otf" />
+      </label>
+
+      <div class="row">
+        <button id="sampleFont" type="button">sample from url</button>
+        <button id="sampleTest" type="button">sample test font</button>
+      </div>
+      <div class="row">
+        <button id="exportJson" type="button">download JSON</button>
+        <button id="exportJs" type="button">download JS module</button>
+      </div>
+      <label class="file">
+        load pack
+        <input id="loadPack" type="file" accept=".json,application/json" />
+      </label>
+
+      <p id="status">no samples yet</p>
+    </aside>
+    <canvas id="stage"></canvas>
+    <script type="module" src="/src/demo/main.ts"></script>
+  </body>
+</html>
