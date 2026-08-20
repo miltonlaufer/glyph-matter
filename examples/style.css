@@ -47,3 +47,23 @@ canvas {
 .start[hidden] {
   display: none;
 }
+
+.stop {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 2;
+  transform: translateX(-50%);
+  margin: 0;
+  border: 1px solid #2a2926;
+  border-radius: 999px;
+  padding: 0.7rem 1.6rem;
+  background: #f4f1eaee;
+  color: inherit;
+  font: 600 18px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.stop[hidden] {
+  display: none;
+}
