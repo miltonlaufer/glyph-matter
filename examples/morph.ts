@@ -2,7 +2,7 @@
  * Word → word: shared letters keep their ink; extras fly into the shorter word.
  */
 import { GlyphMatter, World, drawParticles, makeView } from "../src/lib/index.ts";
-import { FONT_URL, loop, sizeCanvas } from "./shared.ts";
+import { FONT_URL, loop, sizeCanvas, unionBounds } from "./shared.ts";
 
 const canvas = document.querySelector("canvas");
 if (!canvas) throw new Error("examples/morph.html is missing <canvas>");
@@ -21,6 +21,11 @@ world.configure({ stiffness: 22, damping: 6 });
 let index = 0;
 let hold = 0;
 const originX = packs[0].bounds.x + packs[0].bounds.w / 2;
+const viewBounds = unionBounds(
+  packs[0].bounds,
+  packs[1].bounds,
+  packs[0].sampling.fontSize * 0.4,
+);
 
 loop((dt) => {
   const dpr = sizeCanvas(canvas);
@@ -31,7 +36,7 @@ loop((dt) => {
     world.morphTo(packs[index], "origin");
     hold = 0;
   }
-  const view = makeView(world.homeBounds(), canvas.width, canvas.height, {
+  const view = makeView(viewBounds, canvas.width, canvas.height, {
     fit: "contain",
     dpr,
     baseline: 0,

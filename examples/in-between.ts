@@ -1,9 +1,13 @@
 /**
  * Dissolve as the in-between: the word loosens into gas, then retargets
  * and forms the next word. Same phase timings as the workbench.
+ *
+ * The camera is locked to the union of both words. Framing `homeBounds()`
+ * would snap to the target at `morphTo`, which looks like particles
+ * vanishing and new ones popping in.
  */
 import { GlyphMatter, World, drawParticles, makeView } from "../src/lib/index.ts";
-import { FONT_URL, loop, sizeCanvas } from "./shared.ts";
+import { FONT_URL, loop, sizeCanvas, unionBounds } from "./shared.ts";
 
 const canvas = document.querySelector("canvas");
 if (!canvas) throw new Error("examples/in-between.html is missing <canvas>");
@@ -48,6 +52,11 @@ const world = new World().load(packs[0]).configure({
 });
 
 const originX = packs[0].bounds.x + packs[0].bounds.w / 2;
+const viewBounds = unionBounds(
+  packs[0].bounds,
+  packs[1].bounds,
+  packs[0].sampling.fontSize * 0.4,
+);
 let toward = 1;
 let phase: "dissolve" | "travel" | "form" | "hold" = "hold";
 let elapsed = 0;
@@ -94,7 +103,7 @@ loop((dt) => {
   }
 
   world.step(dt);
-  const view = makeView(world.homeBounds(), canvas.width, canvas.height, {
+  const view = makeView(viewBounds, canvas.width, canvas.height, {
     fit: "contain",
     dpr,
     baseline: 0,

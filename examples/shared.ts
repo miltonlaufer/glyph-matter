@@ -1,5 +1,16 @@
 export const FONT_URL = "/fonts/EBGaramond-Regular.ttf";
 
+export type Box = { x: number; y: number; w: number; h: number };
+
+/** Stable box that covers both words, so the camera does not jump at morph. */
+export function unionBounds(a: Box, b: Box, pad = 0): Box {
+  const x = Math.min(a.x, b.x) - pad;
+  const y = Math.min(a.y, b.y) - pad;
+  const r = Math.max(a.x + a.w, b.x + b.w) + pad;
+  const t = Math.max(a.y + a.h, b.y + b.h) + pad;
+  return { x, y, w: r - x, h: t - y };
+}
+
 export function sizeCanvas(canvas: HTMLCanvasElement): number {
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const cssW = Math.max(1, canvas.clientWidth);
