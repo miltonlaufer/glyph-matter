@@ -22,6 +22,7 @@ npm run dev
 | Vortex — swirl well below the word | http://localhost:5173/examples/vortex.html | [vortex](https://www.miltonlaufer.com.ar/glyph-matter-examples/vortex.html) |
 | Sequence — `addAnimationSteps` + wind / attract | http://localhost:5173/examples/sequence.html | [sequence](https://www.miltonlaufer.com.ar/glyph-matter-examples/sequence.html) |
 | Image — `glyph` → sunset → `matter` → book (Canny contours) | http://localhost:5173/examples/image.html | [image](https://www.miltonlaufer.com.ar/glyph-matter-examples/image.html) |
+| Webcam — one still per camera step + mic wind and meter | http://localhost:5173/examples/webcam.html | [webcam](https://www.miltonlaufer.com.ar/glyph-matter-examples/webcam.html) |
 | Audio — wind from *Terminal Hours* (stop, optional analyser lowpass) | http://localhost:5173/examples/audio.html | [audio](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio.html) |
 | Audio bands — treble wind, bass vortex | http://localhost:5173/examples/audio-bands.html | [audio-bands](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio-bands.html) |
 
@@ -32,9 +33,13 @@ The full workbench (all knobs; hamburger menu on a narrow screen) is
 http://localhost:5173/ locally and
 https://www.miltonlaufer.com.ar/glyph-matter-examples/ when hosted.
 
-Captured stills and GIFs used in the root README live in
-[`docs/media/`](../docs/media/). Regenerate them with `npm run media`
-while the workbench is running.
+Captured stills, GIFs, and example MP4s live in [`docs/media/`](../docs/media/).
+With the workbench running, Chrome, and ffmpeg:
+
+```bash
+npm run media         # stills + GIFs for the README
+npm run media:video   # MP4s (skips webcam; audio muxed on audio / audio-bands)
+```
 
 The hosted folder is built with `npm run build:examples` (from this repo)
 into `../glyph-matter-examples`.

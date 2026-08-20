@@ -8,6 +8,7 @@ const FILES = [
   { file: "vortex.html", label: "vortex" },
   { file: "sequence.html", label: "sequence" },
   { file: "image.html", label: "image" },
+  { file: "webcam.html", label: "webcam" },
   { file: "audio.html", label: "audio" },
   { file: "audio-bands.html", label: "audio-bands" },
 ] as const;

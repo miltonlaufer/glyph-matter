@@ -128,3 +128,23 @@ canvas {
 .cutoff:has(input:disabled) {
   opacity: 0.45;
 }
+
+.meter {
+  box-sizing: border-box;
+  width: 168px;
+  height: 2.55rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid #2a2926;
+  border-radius: 999px;
+  background: #f4f1eaee;
+}
+
+.meter-bar {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: #2a2926;
+  transform: scaleX(0);
+  transform-origin: left center;
+}

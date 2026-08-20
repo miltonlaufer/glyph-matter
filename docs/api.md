@@ -57,11 +57,12 @@ of the public API.
 ```text
 font + string  →  SamplePack  →  World / Automata / DifferentialGrowth  →  canvas
 image URL      ↗       ↑
-              JSON or JS module (no font at runtime)
+video still    ↗       JSON or JS module (no font at runtime)
 ```
 
 1. **Sample** a string from a font (`GlyphMatter` or `sampleText`), or a
-   bitmap (`sampleImage` / `sampleFromImage`).
+   bitmap (`sampleImage` / `sampleFromImage` / `sampleImageFromRgba` for
+   **one** webcam or `<video>` still).
 2. Optionally **export** the pack and load it later without the font.
 3. **Animate** with `World` (springs / gas / effects), optional `Sequence`
    (timed words), `Automata`, or `DifferentialGrowth`.
@@ -384,8 +385,10 @@ Turn a photograph into the same `SamplePack` a word uses, so it can morph.
 
 Canny contours (blur, Sobel, non-max suppression, hysteresis). Fill in
 `both` mode is a local-texture stipple so smooth sky/paper stays empty;
-`fill` mode still uses a darkness grid. No DOM. Good for tests and for
-pixels you already have.
+`fill` mode still uses a darkness grid. No DOM. Good for tests, pixels you
+already have, and a webcam/`<video>` still after `drawImage`
+(`examples/webcam.ts` samples one frame each time the sequence enters a
+camera step).
 
 ### `sampleImage(source: string, options?: ImageSampleOptions): Promise<SamplePack>`
 
@@ -527,7 +530,9 @@ world.addEffect({ kind: "attract", x: 120, y: 40, strength: 160, radius: 500 });
 
 Map loudness (0–1) and spectral centroid (0–1, bass→treble) to traveling
 wind. `spectrumEnergy` / `spectrumCentroid` read an FFT buffer;
-`windFromAnalyser(analyser, bins)` does both for a Web Audio `AnalyserNode`.
+`windFromAnalyser(analyser, bins)` does both for a Web Audio `AnalyserNode`
+(a file in `examples/audio.ts`, or a microphone in `examples/webcam.ts`;
+that sketch also draws a time-domain level meter in the page).
 `bandEnergy(freq, binHz, loHz, hiHz)` is the same mean as `spectrumEnergy`
 but only for bins in that Hertz range (`binHz` is `sampleRate / fftSize`).
 
@@ -562,7 +567,7 @@ the fully manual path — `Sequence` is optional sugar.
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `word` | `string?` | Sampled with the current `GlyphMatter` settings. Omit when `pack` is set |
-| `pack` | `SamplePack?` | Ready-made rest pose (image contours, a shipped pack). Wins over `word` |
+| `pack` | `SamplePack?` | Ready-made rest pose (image contours, a webcam still, a shipped pack). Wins over `word` |
 | `x`, `y` | `number?` | World-space shift of the layout origin |
 | `gas`, `legibility`, `stiffness`, `damping` | `number?` | Passed to `World.configure` for this step |
 | `duration` | `number?` | Seconds at rest as this word (default `0.8`) |

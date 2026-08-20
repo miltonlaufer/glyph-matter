@@ -67,12 +67,15 @@ In-between processes (how ink travels while the rest pose retargets):
 
 ### Word → image / webcam
 
-**Now:** a photo is sampled into the same point pack a word uses (`sampleImage`:
-Canny edges, not a dark rectangle). `World.morphTo` treats a one-glyph pack as
-one cloud; extra points clone from existing ink.
+**Now:** a photo or **one** webcam still is sampled into the same point pack a
+word uses (`sampleImage` / `sampleImageFromRgba`: Canny edges, not a dark
+rectangle). `World.morphTo` treats a one-glyph pack as one cloud; extra points
+clone from existing ink. The webcam example grabs **one** still each time
+the sequence enters a camera step (camera stays on; the hold does not keep
+resampling). The mic drives `windFromAnalyser` with a level meter in the page.
 
 **Sketch, not built:** luminance-field descent, SDF blend toward an image,
-webcam as target, optical flow as a behavior.
+live webcam frames as a moving target, optical flow as a behavior.
 
 ## Behaviors as plugins
 
@@ -108,7 +111,7 @@ Build the smallest loop that already contains the whole family of works. Everyth
 
 1. **Sample** — opentype.js → layout a string (kerning, marks) → contour and/or fill samples with home pose and glyph id.
 2. **Mix** — HomeSpring + Gas + TargetAttract. One slider: **legibility**. Targets: another string, or an image luminance map.
-3. **Draw** — Canvas 2D points and optional contour overlay. Webcam as a field input. SVG only as font source and still export.
+3. **Draw** — Canvas 2D points and optional contour overlay. Webcam as one sampled still, not a live field. SVG only as font source and still export.
 
 ## Runtime, not ideology
 
@@ -139,6 +142,7 @@ The loop above is running in `glyph-matter`:
 | Contour body (growing outlines) | `differential.ts` |
 | Draw | `draw.ts` (canvas 2D) |
 
-Built as image contours (`sampleImage`, Canny + texture stipple) and audio
-wind (`windFromAnalyser`). Not built yet: webcam targets, flocking, flow
-fields, metaballs, WebGL.
+Built as image contours (`sampleImage`, Canny + texture stipple), webcam
+stills (`sampleImageFromRgba` on one `<video>` frame per camera step), and
+audio / mic wind (`windFromAnalyser`). Not built yet: flocking, flow fields,
+metaballs, WebGL.

@@ -50,7 +50,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "media": "node scripts/capture-media.mjs"
+    "media": "node scripts/capture-media.mjs",
+    "media:video": "MEDIA=video node scripts/capture-media.mjs"
   },
   "dependencies": {
     "opentype.js": "^2.0.0"

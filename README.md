@@ -74,6 +74,8 @@ sidebar hides behind a hamburger at the top left.
 | `npm run lint` | ESLint |
 | `npm run build` | Typecheck, then production build of the workbench |
 | `npm run build:examples` | Static examples into `../glyph-matter-examples` |
+| `npm run media` | README stills + GIFs (needs `npm run dev`, Chrome, ffmpeg) |
+| `npm run media:video` | Example MP4s (skips webcam; muxes *Terminal Hours* onto the audio sketches) |
 
 ## Quick start
 
@@ -169,6 +171,7 @@ Source for those pages is the workbench plus [`examples/`](examples/). After `np
 | Vortex | http://localhost:5173/examples/vortex.html | [vortex](https://www.miltonlaufer.com.ar/glyph-matter-examples/vortex.html) |
 | Sequence + wind / attract | http://localhost:5173/examples/sequence.html | [sequence](https://www.miltonlaufer.com.ar/glyph-matter-examples/sequence.html) |
 | Image contours | http://localhost:5173/examples/image.html | [image](https://www.miltonlaufer.com.ar/glyph-matter-examples/image.html) |
+| Webcam — one still per camera step + mic | http://localhost:5173/examples/webcam.html | [webcam](https://www.miltonlaufer.com.ar/glyph-matter-examples/webcam.html) |
 | Audio wind | http://localhost:5173/examples/audio.html | [audio](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio.html) |
 | Audio bands (treble wind, bass vortex) | http://localhost:5173/examples/audio-bands.html | [audio-bands](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio-bands.html) |
 
@@ -202,9 +205,13 @@ Publish a fresh copy of the live folder with `npm run build:examples` (writes `.
 
 ![Particles forming the word glyph, then a sunset photograph, then matter, then a book](docs/media/image.gif)
 
+**Webcam** — same loop as image (`glyph` → snapshot → `matter` → snapshot). Each time the sequence enters a camera step it grabs **one** new mirrored still and holds it (the camera stays on). The microphone drives wind (no lowpass, no speaker playback) with a level meter next to **stop**.
+
 **Audio** — `glyph` → `matter` → `dancing`, with wind from *Terminal Hours*. Click to start (browser autoplay); **stop** at the bottom. Optional **lowpass** is analyser-only (the mix stays dry); a log slider sets the cutoff (80 Hz–8 kHz).
 
 **Audio bands** — same track and words. Treble (2–8 kHz) drives wind; bass (20–280 Hz) drives a vortex below the word.
+
+MP4 recordings of the sketches (except webcam, which needs a camera) live in [`docs/media/`](docs/media/). Audio examples include *Terminal Hours*. Regenerate with `npm run media:video` while the workbench is running.
 
 ## Using with React
 

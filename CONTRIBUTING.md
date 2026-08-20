@@ -28,6 +28,12 @@ README stills and GIFs: with the workbench running, Chrome, and ffmpeg:
 npm run media
 ```
 
+MP4s of the sketches (skips webcam; *Terminal Hours* muxed onto the audio sketches):
+
+```bash
+npm run media:video
+```
+
 Writes into `docs/media/`.
 
 ## Before you open a PR
