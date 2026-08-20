@@ -45,6 +45,44 @@ export function translatePack(pack: SamplePack, x: number, y: number): SamplePac
   };
 }
 
+/** Scale about the pack's top-left bound. */
+export function scalePack(pack: SamplePack, scale: number): SamplePack {
+  if (scale === 1) return pack;
+  const ox = pack.bounds.x;
+  const oy = pack.bounds.y;
+  const mapX = (x: number) => ox + (x - ox) * scale;
+  const mapY = (y: number) => oy + (y - oy) * scale;
+  return {
+    ...pack,
+    bounds: {
+      x: ox,
+      y: oy,
+      w: pack.bounds.w * scale,
+      h: pack.bounds.h * scale,
+    },
+    glyphs: pack.glyphs.map((g) => ({
+      ...g,
+      x: mapX(g.x),
+      y: mapY(g.y),
+      advance: g.advance * scale,
+    })),
+    points: pack.points.map((p) => ({ ...p, x: mapX(p.x), y: mapY(p.y) })),
+    sampling: {
+      ...pack.sampling,
+      fontSize: pack.sampling.fontSize * scale,
+      contourSpacing: pack.sampling.contourSpacing * scale,
+      fillSpacing: pack.sampling.fillSpacing * scale,
+    },
+  };
+}
+
+/** Translate so the pack center sits on `(cx, cy)`. */
+export function placePack(pack: SamplePack, cx: number, cy: number): SamplePack {
+  const dx = cx - (pack.bounds.x + pack.bounds.w / 2);
+  const dy = cy - (pack.bounds.y + pack.bounds.h / 2);
+  return translatePack(pack, dx, dy);
+}
+
 /** ES module source: `export const <exportName> = { ... }`. */
 export function packToModule(pack: SamplePack, exportName = "glyphPack"): string {
   if (!IDENT.test(exportName)) {

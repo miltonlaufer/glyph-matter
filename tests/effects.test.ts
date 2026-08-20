@@ -86,6 +86,20 @@ describe("effects", () => {
     expect(world.particles[0]?.x ?? 0).toBeGreaterThan(x0 + 4);
   });
 
+  it("wind still pushes a dissolved cloud", async () => {
+    const gm = new GlyphMatter({ samplingMode: "contour", contourSpacing: 10, fontSize: 80 });
+    await gm.sampleFromFont(font, "I");
+    const world = new World()
+      .configure({ legibility: 0.04, gas: 90, stiffness: 28, damping: 6 })
+      .load(gm.exportSamples())
+      .addEffect({ kind: "wind", vx: 240, vy: 0, period: 0 });
+    const meanX = () =>
+      world.particles.reduce((s, p) => s + p.x, 0) / Math.max(1, world.particles.length);
+    const x0 = meanX();
+    for (let i = 0; i < 40; i++) world.step(1 / 60);
+    expect(meanX()).toBeGreaterThan(x0 + 6);
+  });
+
   it("World.step applies added effects", async () => {
     const gm = new GlyphMatter({ samplingMode: "contour", contourSpacing: 10, fontSize: 80 });
     await gm.sampleFromFont(font, "I");

@@ -1,4 +1,5 @@
 import { loadFont, resolvedOptions, sampleText, type FontSource } from "./font.ts";
+import { sampleImage, type ImageSampleOptions } from "./image.ts";
 import { packToJSON, packToModule, parsePack } from "./pack.ts";
 import type { Font } from "opentype.js";
 import type {
@@ -68,6 +69,18 @@ export class GlyphMatter {
       );
     }
     return sampleText(this.font, text, this.snapshotOptions());
+  }
+
+  /**
+   * Sample a bitmap URL into contour + fill points. Keeps the loaded font
+   * so {@link GlyphMatter.samplePack} still works for words. Sets the
+   * current pack to the image.
+   */
+  async sampleFromImage(source: string, options: ImageSampleOptions = {}): Promise<SamplePack> {
+    const pack = await sampleImage(source, options);
+    this.pack = pack;
+    this.text = pack.text;
+    return pack;
   }
 
   /**

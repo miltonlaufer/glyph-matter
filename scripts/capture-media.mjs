@@ -283,6 +283,14 @@ async function main() {
         height: 300,
         scale: 560,
       },
+      {
+        name: "image",
+        url: `${BASE}/examples/image.html`,
+        seconds: 12.5,
+        width: 800,
+        height: 300,
+        scale: 560,
+      },
     ];
 
     const jobs = filter.length

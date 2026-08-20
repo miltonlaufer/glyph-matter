@@ -21,6 +21,8 @@ npm run dev
 | Wind — traveling gust (sawtooth) | http://localhost:5173/examples/wind.html | [wind](https://www.miltonlaufer.com.ar/glyph-matter-examples/wind.html) |
 | Vortex — swirl well below the word | http://localhost:5173/examples/vortex.html | [vortex](https://www.miltonlaufer.com.ar/glyph-matter-examples/vortex.html) |
 | Sequence — `addAnimationSteps` + wind / attract | http://localhost:5173/examples/sequence.html | [sequence](https://www.miltonlaufer.com.ar/glyph-matter-examples/sequence.html) |
+| Image — `glyph` → sunset → `matter` → book | http://localhost:5173/examples/image.html | [image](https://www.miltonlaufer.com.ar/glyph-matter-examples/image.html) |
+| Audio — wind from *Terminal Hours* | http://localhost:5173/examples/audio.html | [audio](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio.html) |
 
 The font is the copy in `public/fonts/EBGaramond-Regular.ttf`. Point
 `FONT_URL` in `shared.ts` at another `.ttf` / `.otf` if you like.

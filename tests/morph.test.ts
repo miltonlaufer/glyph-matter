@@ -314,4 +314,33 @@ describe("morphParticles closest assignment", () => {
     expect(Math.abs(papaCenter - miltonCenter)).toBeLessThan(8);
     expect(minHome).toBeLessThan(40);
   });
+
+  it("buds extra dest points from existing particles, not the dest pose", () => {
+    const fromGlyphs = [
+      { i: 0, ch: "a", x: 0, y: 0, advance: 10, word: 0 },
+      { i: 1, ch: "b", x: 50, y: 0, advance: 10, word: 0 },
+      { i: 2, ch: "c", x: 100, y: 0, advance: 10, word: 0 },
+    ];
+    const toGlyphs = [{ i: 0, ch: "¶", x: 0, y: 0, advance: 200, word: 0 }];
+    const current = [
+      { ...particle(0, 0), g: 0 },
+      { ...particle(50, 0), g: 1 },
+      { ...particle(100, 0), g: 2 },
+    ];
+    const targets = Array.from({ length: 9 }, (_, i) => ({
+      x: i * 20,
+      y: 40,
+      g: 0,
+      k: "contour" as const,
+    }));
+    const out = morphParticles(current, targets, "origin", fromGlyphs, toGlyphs);
+    const living = out.filter((p) => !p.exit);
+    expect(living).toHaveLength(9);
+    expect(living.every((p) => p.y === 0)).toBe(true);
+    expect(living.every((p) => p.homeY === 40)).toBe(true);
+    const origins = new Set(living.map((p) => p.x));
+    expect(origins.has(0)).toBe(true);
+    expect(origins.has(50)).toBe(true);
+    expect(origins.has(100)).toBe(true);
+  });
 });

@@ -9,8 +9,6 @@ import {
   World,
   Sequence,
   applyEffect,
-  translatePack,
-  World,
   Automata,
   DifferentialGrowth,
   loadFont,
@@ -19,6 +17,15 @@ import {
   parsePack,
   packToJSON,
   packToModule,
+  translatePack,
+  scalePack,
+  placePack,
+  sampleImage,
+  sampleImageFromRgba,
+  spectrumEnergy,
+  spectrumCentroid,
+  windFromSpectrum,
+  windFromAnalyser,
   drawSamples,
   drawParticles,
   drawAutomata,
@@ -295,6 +302,12 @@ in memory for `resample` / `samplePack`.
 Sample another string from the loaded font **without** replacing the current
 pack. Throws if no font is loaded (pack-only mode).
 
+### `sampleFromImage(source: string, options?: ImageSampleOptions): Promise<SamplePack>`
+
+Decode a bitmap URL, run Canny edges plus texture stipple (not a dark
+rectangle), and set the current pack to that image. The loaded font is kept,
+so `samplePack` still works for words.
+
 ### `resample(text?: string): this`
 
 Sample again from the font last passed to `sampleFromFont`. Optional `text`
@@ -361,6 +374,30 @@ Layout, then sample each glyph path. This is the pack builder.
 
 ---
 
+## Sampling (image)
+
+Turn a photograph into the same `SamplePack` a word uses, so it can morph.
+
+### `sampleImageFromRgba(width, height, data, options?): SamplePack`
+
+Canny contours (blur, Sobel, non-max suppression, hysteresis). Fill in
+`both` mode is a local-texture stipple so smooth sky/paper stays empty;
+`fill` mode still uses a darkness grid. No DOM. Good for tests and for
+pixels you already have.
+
+### `sampleImage(source: string, options?: ImageSampleOptions): Promise<SamplePack>`
+
+`fetch`/decode via an `<img>` + canvas, then `sampleImageFromRgba`. Browser
+only.
+
+`ImageSampleOptions`: `samplingMode`, `contourSpacing` (default 1.4),
+`fillSpacing` (3.5), `width` (fit, default 640), `edgeThreshold` (0.12),
+`edgeFloor` (0.4), `edgeLow` (0.4 × high threshold), `fillDarkness` (0.58,
+fill-only luma cutoff), `maxPoints` (8000; fill is capped, contours are
+kept), `label`.
+
+---
+
 ## Packs
 
 ### `parsePack(source: SamplePack | string | unknown): SamplePack`
@@ -374,6 +411,18 @@ Validate a pack. Parses JSON strings. Throws on missing fields or `v !== 1`.
 ### `packToModule(pack: SamplePack, exportName = "glyphPack"): string`
 
 `export const <name> = <json>;`
+
+### `translatePack(pack, x, y): SamplePack`
+
+Shift in world space.
+
+### `scalePack(pack, scale): SamplePack`
+
+Scale about the pack's top-left bound.
+
+### `placePack(pack, cx, cy): SamplePack`
+
+Move the pack so its center sits on `(cx, cy)`.
 
 ---
 
@@ -443,6 +492,10 @@ Append a force applied every `step`. See [Particle effects](#particle-effects).
 
 Drop extra forces. Pointer repulsion (`world.pointer`) is unchanged.
 
+### `setEffects(effects: ParticleEffect[]): this`
+
+Replace the whole force list (useful when wind is rebuilt every frame).
+
 `effects` is a public array of the active forces.
 
 ---
@@ -450,8 +503,8 @@ Drop extra forces. Pointer repulsion (`world.pointer`) is unchanged.
 ## Particle effects
 
 Extra accelerations on `World`. They stack with springs, gas, and the pointer.
-`World.step` scales extra forces against spring stiffness so a formed word
-still leans in the wind instead of snapping straight back. Radius on attract /
+`World.step` scales extra forces by rest stiffness so they still lean a
+formed word, and still push a dissolved cloud (legibility does not mute them). Radius on attract /
 repel / vortex is a **cutoff distance** from the well: inside it the force
 falls off linearly; beyond it the force is zero.
 
@@ -467,6 +520,12 @@ falls off linearly; beyond it the force is zero.
 world.addEffect({ kind: "wind", vx: 80, vy: 0, gust: 30, period: 1.4, wavelength: 240 });
 world.addEffect({ kind: "attract", x: 120, y: 40, strength: 160, radius: 500 });
 ```
+
+### `windFromSpectrum(energy, centroid): WindEffect`
+
+Map loudness (0–1) and spectral centroid (0–1, bass→treble) to traveling
+wind. `spectrumEnergy` / `spectrumCentroid` read an FFT buffer;
+`windFromAnalyser(analyser, bins)` does both for a Web Audio `AnalyserNode`.
 
 `applyEffect(effect, particle, dt, time?)` is the same function `World.step` uses,
 exported for tests and custom integrators. `time` is seconds; wind uses it for
@@ -498,7 +557,8 @@ the fully manual path — `Sequence` is optional sugar.
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `word` | `string` | Sampled with the current `GlyphMatter` settings |
+| `word` | `string?` | Sampled with the current `GlyphMatter` settings. Omit when `pack` is set |
+| `pack` | `SamplePack?` | Ready-made rest pose (image contours, a shipped pack). Wins over `word` |
 | `x`, `y` | `number?` | World-space shift of the layout origin |
 | `gas`, `legibility`, `stiffness`, `damping` | `number?` | Passed to `World.configure` for this step |
 | `duration` | `number?` | Seconds at rest as this word (default `0.8`) |
@@ -544,6 +604,7 @@ Low-level rematch used by `World.morphTo`.
   shorter target (`exit: true`) and die on arrival.
 - Spare points inside a matched letter do the same.
 - New letters of a longer target bud from the closest existing letter.
+- Extra dest points (a photo vs a word) clone from existing particles.
 
 `align` is applied before matching (`"origin"` default).
 

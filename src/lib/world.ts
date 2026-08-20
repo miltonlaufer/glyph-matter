@@ -153,6 +153,12 @@ export class World {
     return this;
   }
 
+  /** Replace the whole force list. */
+  setEffects(effects: ParticleEffect[]): this {
+    this.effects = [...effects];
+    return this;
+  }
+
   /** Snap every particle to its home and zero velocity. */
   home(): this {
     for (const p of this.particles) {
@@ -256,9 +262,9 @@ export class World {
           p.vy += (dy / d) * f;
         }
       }
-      // Springs of size `k` cancel a raw extra accel. Scale so wind/wells
-      // still lean a formed word instead of vanishing at legibility 1.
-      const effectDt = t * (1 + k / 4);
+      // Scale extra forces by rest stiffness, not live `k` (k drops with
+      // legibility). Otherwise wind vanishes in the dissolved cloud.
+      const effectDt = t * (1 + this.stiffness / 4);
       for (const effect of this.effects) applyEffect(effect, p, effectDt, this.elapsed);
       p.vx *= drag;
       p.vy *= drag;

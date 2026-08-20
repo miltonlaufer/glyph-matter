@@ -2,7 +2,7 @@
 export { GlyphMatter } from "./GlyphMatter.ts";
 export { loadFont, sampleText, layoutGlyphs } from "./font.ts";
 export type { FontSource } from "./font.ts";
-export { parsePack, packToJSON, packToModule, translatePack } from "./pack.ts";
+export { parsePack, packToJSON, packToModule, translatePack, scalePack, placePack } from "./pack.ts";
 export { drawSamples, drawParticles, drawAutomata, drawRings, makeView, screenToWorld } from "./draw.ts";
 export type { DrawFit, DrawSamplesOptions, View, DrawablePoint, AutomataGrid } from "./draw.ts";
 export { World } from "./world.ts";
@@ -18,6 +18,9 @@ export type {
 } from "./effects.ts";
 export { Sequence } from "./sequence.ts";
 export type { AnimationStep, SequenceOptions, InBetween } from "./sequence.ts";
+export { sampleImage, sampleImageFromRgba, loadImagePixels } from "./image.ts";
+export type { ImageSampleOptions } from "./image.ts";
+export { spectrumEnergy, spectrumCentroid, windFromSpectrum, windFromAnalyser } from "./audio.ts";
 export { morphParticles } from "./morph.ts";
 export type { MorphAlign, Morphable } from "./morph.ts";
 export { Automata, stepAutomata, stepGrowth, bridgeMask } from "./automata.ts";

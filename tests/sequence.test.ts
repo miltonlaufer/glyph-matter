@@ -83,4 +83,17 @@ describe("Sequence", () => {
     expect(home.x).toBeCloseTo(unshifted.x + 40, 0);
     expect(home.y).toBeCloseTo(unshifted.y - 10, 0);
   });
+
+  it("can morph to a ready-made pack instead of a word", async () => {
+    const { gm, world } = await ready();
+    const dest = gm.samplePack("O");
+    const seq = new Sequence(gm, world, { loop: false })
+      .addAnimationSteps([
+        { word: "I", duration: 0.12, inBetween: "spring" },
+        { pack: dest, duration: 0.5, inBetween: "spring" },
+      ])
+      .play();
+    for (let i = 0; i < 40; i++) seq.tick(1 / 60);
+    expect(world.glyphs.some((g) => g.ch === "O" || g.ch === "o")).toBe(true);
+  });
 });

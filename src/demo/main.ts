@@ -113,6 +113,10 @@ if (fontUrl.value === "/fonts/EBGaramond-Regular.ttf") {
   fontUrl.value = `${import.meta.env.BASE_URL}fonts/EBGaramond-Regular.ttf`;
 }
 const fontFile = must(document.querySelector<HTMLInputElement>("#fontFile"), "fontFile");
+const loadImageInput = must(
+  document.querySelector<HTMLInputElement>("#loadImage"),
+  "loadImage",
+);
 const statusEl = must(document.querySelector<HTMLParagraphElement>("#status"), "status");
 const sampleFontBtn = must(
   document.querySelector<HTMLButtonElement>("#sampleFont"),
@@ -619,6 +623,33 @@ fontFile.addEventListener("change", async () => {
     afterSample(file.name);
   } catch (err) {
     setStatus(err instanceof Error ? err.message : String(err));
+  }
+});
+
+loadImageInput.addEventListener("change", async () => {
+  const file = loadImageInput.files?.[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  try {
+    stopSequence();
+    await gm.sampleFromImage(url, {
+      width: 720,
+      contourSpacing: 1.4,
+      fillSpacing: 4.5,
+      edgeThreshold: 0.1,
+      maxPoints: 20000,
+      label: file.name,
+    });
+    sourceLabel = file.name;
+    packCache.clear();
+    const pack = gm.getPack();
+    if (pack) world.load(pack);
+    applyEffectFromUi();
+    setStatus(`${file.name} · image contours · ${pack?.points.length ?? 0} points`);
+  } catch (err) {
+    setStatus(err instanceof Error ? err.message : String(err));
+  } finally {
+    URL.revokeObjectURL(url);
   }
 });
 

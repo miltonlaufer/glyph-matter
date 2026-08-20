@@ -7,6 +7,8 @@ const FILES = [
   { file: "wind.html", label: "wind" },
   { file: "vortex.html", label: "vortex" },
   { file: "sequence.html", label: "sequence" },
+  { file: "image.html", label: "image" },
+  { file: "audio.html", label: "audio" },
 ] as const;
 
 function isDevRoot(): boolean {

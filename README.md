@@ -167,8 +167,10 @@ Source for those pages is the workbench plus [`examples/`](examples/). After `np
 | Wind (traveling gust) | http://localhost:5173/examples/wind.html | [wind](https://www.miltonlaufer.com.ar/glyph-matter-examples/wind.html) |
 | Vortex | http://localhost:5173/examples/vortex.html | [vortex](https://www.miltonlaufer.com.ar/glyph-matter-examples/vortex.html) |
 | Sequence + wind / attract | http://localhost:5173/examples/sequence.html | [sequence](https://www.miltonlaufer.com.ar/glyph-matter-examples/sequence.html) |
+| Image contours | http://localhost:5173/examples/image.html | [image](https://www.miltonlaufer.com.ar/glyph-matter-examples/image.html) |
+| Audio wind | http://localhost:5173/examples/audio.html | [audio](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio.html) |
 
-Publish a fresh copy of the live folder with `npm run build:examples` (writes `../glyph-matter-examples`).
+Publish a fresh copy of the live folder with `npm run build:examples` (writes `../glyph-matter-examples`). Hosted at [miltonlaufer.com.ar/glyph-matter-examples](https://www.miltonlaufer.com.ar/glyph-matter-examples).
 
 **Field** — pointer push, click to scatter:
 
@@ -193,6 +195,12 @@ Publish a fresh copy of the live folder with `npm run build:examples` (writes `.
 **Vortex** — swirl well below the word (offset 0, 160 / strength 577 / radius 289):
 
 ![Particles swirling around a well below the dissolving word](docs/media/vortex.gif)
+
+**Image** — Canny contours of a photo, then back to a word (`glyph` → sunset → `matter` → book):
+
+![Particles forming the word glyph, then a sunset photograph, then matter, then a book](docs/media/image.gif)
+
+**Audio** — `glyph` → `matter` → `dancing`, with wind from *Terminal Hours*. Click to start (browser autoplay).
 
 ## Using with React
 

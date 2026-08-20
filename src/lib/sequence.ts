@@ -7,7 +7,10 @@ import type { ParticleEffect } from "./effects.ts";
 export type InBetween = "spring" | "dissolve";
 
 export type AnimationStep = {
-  word: string;
+  /** Sampled with the current `GlyphMatter` settings. Omit when `pack` is set. */
+  word?: string;
+  /** Ready-made rest pose (image contours, a shipped pack). Wins over `word`. */
+  pack?: SamplePack;
   /** World-space shift of the sampled word (layout origin). */
   x?: number;
   y?: number;
@@ -162,7 +165,15 @@ export class Sequence {
   }
 
   private packFor(step: AnimationStep): SamplePack {
-    return translatePack(this.gm.samplePack(step.word), step.x ?? 0, step.y ?? 0);
+    const packed = step.pack
+      ? step.pack
+      : step.word
+        ? this.gm.samplePack(step.word)
+        : null;
+    if (!packed) {
+      throw new Error("AnimationStep needs a word or a pack.");
+    }
+    return translatePack(packed, step.x ?? 0, step.y ?? 0);
   }
 
   private applyPack(pack: SamplePack, mode: "load" | "morph"): void {

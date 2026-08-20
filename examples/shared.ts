@@ -18,6 +18,15 @@ export function unionBounds(a: Box, b: Box, pad = 0): Box {
   return { x, y, w: r - x, h: t - y };
 }
 
+export function unionAll(boxes: Box[], pad = 0): Box {
+  const first = boxes[0];
+  if (!first) return { x: 0, y: 0, w: 0, h: 0 };
+  let acc = first;
+  for (let i = 1; i < boxes.length; i++) acc = unionBounds(acc, boxes[i]!);
+  if (!pad) return acc;
+  return { x: acc.x - pad, y: acc.y - pad, w: acc.w + pad * 2, h: acc.h + pad * 2 };
+}
+
 export function sizeCanvas(canvas: HTMLCanvasElement): number {
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const cssW = Math.max(1, canvas.clientWidth);

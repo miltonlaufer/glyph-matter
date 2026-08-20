@@ -29,3 +29,21 @@ canvas {
   height: 100%;
   touch-action: none;
 }
+
+.start {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  border: 0;
+  background: #f4f1eacc;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.start[hidden] {
+  display: none;
+}

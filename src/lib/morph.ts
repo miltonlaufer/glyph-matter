@@ -230,14 +230,22 @@ function matchGlyphPoints(sources: Morphable[], targets: SamplePoint[]): MatchRe
   const srcF = sources.filter((p) => p.k === "fill");
   const dstC = targets.filter((p) => p.k === "contour");
   const dstF = targets.filter((p) => p.k === "fill");
-  const hasKind = srcC.length + dstC.length > 0 && srcF.length + dstF.length > 0;
-  if (!hasKind) return matchByLocal(sources, targets);
+  const bothHaveKinds =
+    srcC.length > 0 && srcF.length > 0 && dstC.length > 0 && dstF.length > 0;
+  if (!bothHaveKinds) return matchByLocal(sources, targets);
   const contour = matchByLocal(srcC, dstC);
   const fill = matchByLocal(srcF, dstF);
   return {
     live: contour.live.concat(fill.live),
     unused: contour.unused.concat(fill.unused),
   };
+}
+
+/** Word↔image (1 glyph vs many) is one cloud, not a middle-letter slot. */
+function useLetterSlots(fromN: number, toN: number): boolean {
+  if (fromN === 0 || toN === 0) return false;
+  if ((fromN === 1 && toN > 1) || (toN === 1 && fromN > 1)) return false;
+  return true;
 }
 
 function matchCharOccurrences(
@@ -535,14 +543,13 @@ function matchClosestAt(
     sourceForTarget[pair.t] = pair.s;
     targetForSource[pair.s] = pair.t;
   }
-  const srcPts = current.map(srcPos);
-  const dstPts = dest.map(dstPos);
   const live: Morphable[] = [];
+  let extra = 0;
   for (let t = 0; t < dest.length; t++) {
     const target = dest[t];
     if (!target) continue;
     let s = sourceForTarget[t] ?? -1;
-    if (s < 0) s = nearestIndex(dstPts[t] ?? target, srcPts);
+    if (s < 0 && current.length > 0) s = extra++ % current.length;
     const source = current[s];
     if (source) live.push(emit(source, target));
     else live.push(spawn(target, 0));
@@ -571,7 +578,9 @@ function matchClosest(current: Morphable[], dest: SamplePoint[]): MatchResult {
  * grow on the sides. Extra letters of a longer word fly into every
  * letter of the shorter one, then die on arrival. Spare points inside
  * a matched letter do the same instead of vanishing in place. New
- * letters bud from the closest existing letter.
+ * letters bud from the closest existing letter. Extra dest points
+ * (word→image) clone from existing particles instead of appearing
+ * at the target.
  */
 export function morphParticles(
   current: Morphable[],
@@ -600,7 +609,7 @@ export function morphParticles(
     append(spare, result.unused);
   };
 
-  if (currentGlyphs.length === 0 || targetGlyphs.length === 0) {
+  if (!useLetterSlots(currentGlyphs.length, targetGlyphs.length)) {
     take(matchClosest(living, dest));
     append(next, sendEvenToLetters(spare, orderedGroups(groupByGlyph(dest))));
     return next;
