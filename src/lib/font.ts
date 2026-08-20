@@ -11,6 +11,7 @@ import { DEFAULT_OPTIONS } from "./types.ts";
 
 export type FontSource = string | ArrayBuffer | ArrayBufferView | Font;
 
+/** Glyph after horizontal layout (kerning applied). */
 export type LaidOutGlyph = {
   char: string;
   glyph: Glyph;
@@ -47,6 +48,7 @@ function toArrayBuffer(data: ArrayBuffer | ArrayBufferView): ArrayBuffer {
   ) as ArrayBuffer;
 }
 
+/** Parse a font from a URL, bytes, or an existing opentype.js `Font`. */
 export async function loadFont(source: FontSource): Promise<Font> {
   if (isFont(source)) return source;
   if (typeof source === "string") {
@@ -69,6 +71,7 @@ export function fontFamilyName(font: Font): string {
   );
 }
 
+/** Horizontal layout with kerning. Newlines bump `wordIndex` without emitting a glyph. */
 export function layoutGlyphs(
   font: Font,
   text: string,
@@ -108,6 +111,7 @@ export function layoutGlyphs(
   return out;
 }
 
+/** Layout `text` and sample each glyph path into a {@link SamplePack}. */
 export function sampleText(
   font: Font,
   text: string,

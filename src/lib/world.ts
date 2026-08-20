@@ -2,6 +2,7 @@ import { boundsOf } from "./path.ts";
 import { morphParticles, type MorphAlign } from "./morph.ts";
 import type { GlyphRecord, SampleKind, SamplePack } from "./types.ts";
 
+/** Live sample with velocity. `homeX`/`homeY` are the rest pose. */
 export type Particle = {
   x: number;
   y: number;
@@ -13,7 +14,9 @@ export type Particle = {
   k: SampleKind;
   c?: number;
   t?: number;
+  /** 0–1 opacity; new points fade in. */
   life?: number;
+  /** Spare ink from a longer word; removed when it reaches home. */
   exit?: boolean;
 };
 
@@ -35,6 +38,11 @@ export type WorldOptions = {
   fade?: number;
 };
 
+/**
+ * Particle field for a sampled word. Springs pull toward homes;
+ * `legibility` interpolates between letter and gas. {@link World.morphTo}
+ * retargets homes so ink travels from one word to another.
+ */
 export class World {
   particles: Particle[] = [];
   glyphs: GlyphRecord[] = [];
@@ -48,6 +56,7 @@ export class World {
   fade = 0.55;
   pointer: WorldPointer | null = null;
 
+  /** Patch physics knobs (`legibility`, springs, gas, pointer, fade). */
   configure(options: WorldOptions): this {
     if (options.legibility !== undefined) this.legibility = options.legibility;
     if (options.stiffness !== undefined) this.stiffness = options.stiffness;
@@ -116,6 +125,7 @@ export class World {
     return this;
   }
 
+  /** Add a random impulse to living particles. */
   scatter(strength = 420): this {
     for (const p of this.particles) {
       if (p.exit) continue;
@@ -127,6 +137,7 @@ export class World {
     return this;
   }
 
+  /** Snap every particle to its home and zero velocity. */
   home(): this {
     for (const p of this.particles) {
       p.x = p.homeX;
@@ -163,6 +174,7 @@ export class World {
     return this;
   }
 
+  /** Axis-aligned box of living particles' homes. */
   homeBounds() {
     const living = this.particles.filter((p) => !p.exit);
     return boundsOf(
@@ -173,6 +185,7 @@ export class World {
     );
   }
 
+  /** Average distance from living particles to their homes. */
   meanHomeDistance(): number {
     const living = this.particles.filter((p) => !p.exit);
     if (living.length === 0) return 0;
@@ -183,6 +196,10 @@ export class World {
     return sum / living.length;
   }
 
+  /**
+   * Integrate springs, gas, pointer, and drag.
+   * @param dt Seconds since last frame; clamped to at most 1/30.
+   */
   step(dt: number): this {
     const t = Math.min(Math.max(dt, 0), 1 / 30);
     if (t === 0) return this;

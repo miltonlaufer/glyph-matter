@@ -2,11 +2,11 @@ import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", "eslint.config.js", "vite.config.ts", "vitest.config.ts"] },
+  { ignores: ["dist", "node_modules", "eslint.config.js", "vite.config.ts", "vitest.config.ts", "scripts/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ["src/**/*.ts", "tests/**/*.ts"],
+    files: ["src/**/*.ts", "tests/**/*.ts", "examples/**/*.ts"],
     rules: {
       "@typescript-eslint/no-unused-vars": [
         "error",

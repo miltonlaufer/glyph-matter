@@ -2,7 +2,45 @@
   "name": "glyph-matter",
   "version": "0.1.0",
   "private": true,
+  "description": "Sample OpenType text into identity-preserving particle matter, then rest, scatter, or become another word.",
+  "license": "MIT",
+  "author": "Milton Laufer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/miltonlaufer/glyph-matter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/miltonlaufer/glyph-matter/issues"
+  },
+  "homepage": "https://github.com/miltonlaufer/glyph-matter#readme",
+  "keywords": [
+    "typography",
+    "particles",
+    "opentype",
+    "electronic-literature",
+    "canvas",
+    "morph",
+    "cellular-automata",
+    "differential-growth"
+  ],
   "type": "module",
+  "main": "./src/lib/index.ts",
+  "module": "./src/lib/index.ts",
+  "types": "./src/lib/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/lib/index.ts",
+      "import": "./src/lib/index.ts"
+    }
+  },
+  "files": [
+    "src/lib",
+    "docs",
+    "examples",
+    "README.md",
+    "LICENSE",
+    "CONTRIBUTING.md"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -10,7 +48,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "media": "node scripts/capture-media.mjs"
   },
   "dependencies": {
     "opentype.js": "^2.0.0"

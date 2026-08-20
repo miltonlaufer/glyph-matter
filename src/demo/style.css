@@ -1,5 +1,37 @@
 :root {
+  color-scheme: light;
+  --bg: #f3efe6;
+  --bg-aside: #ece8de;
+  --bg-elevated: #faf7f0;
+  --stroke: #d4cfc3;
+  --stroke-input: #c4bfb3;
+  --stroke-hover: #6a665e;
+  --text: #2a2824;
+  --text-muted: #6a665e;
+  --text-label: #5c5850;
+  --text-hint: #8a857c;
+  --text-input: #1c1b18;
+  --ink: #1c1b18;
+  --ink-soft: #4a4740;
+  --ink-dying: #8a857c;
+}
+
+[data-theme="dark"] {
   color-scheme: dark;
+  --bg: #111;
+  --bg-aside: #111;
+  --bg-elevated: #1b1b1b;
+  --stroke: #2a2a2a;
+  --stroke-input: #3a3a3a;
+  --stroke-hover: #888;
+  --text: #d8d4cc;
+  --text-muted: #8f8b84;
+  --text-label: #9a958c;
+  --text-hint: #6f6b64;
+  --text-input: #eeeae3;
+  --ink: #f2efe9;
+  --ink-soft: #c8c2b4;
+  --ink-dying: #6a665e;
 }
 
 * {
@@ -10,8 +42,8 @@ html,
 body {
   margin: 0;
   height: 100%;
-  background: #111;
-  color: #d8d4cc;
+  background: var(--bg);
+  color: var(--text);
   font-family: Georgia, "Times New Roman", serif;
 }
 
@@ -25,8 +57,29 @@ aside {
   flex-direction: column;
   gap: 0.85rem;
   padding: 1.25rem 1.1rem;
-  border-right: 1px solid #2a2a2a;
+  border-right: 1px solid var(--stroke);
+  background: var(--bg-aside);
   overflow: auto;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.title-row h1 {
+  flex: 1;
+}
+
+#themeToggle {
+  flex: 0 0 auto;
+  cursor: pointer;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  padding: 0.28rem 0.5rem;
 }
 
 h1 {
@@ -38,7 +91,7 @@ h1 {
 
 .lede {
   margin: 0;
-  color: #8f8b84;
+  color: var(--text-muted);
   font-size: 0.85rem;
   line-height: 1.4;
 }
@@ -49,7 +102,7 @@ label {
   gap: 0.25rem;
   font-size: 0.75rem;
   letter-spacing: 0.04em;
-  color: #9a958c;
+  color: var(--text-label);
   position: relative;
 }
 
@@ -57,16 +110,16 @@ label .val {
   position: absolute;
   right: 0;
   top: 0;
-  color: #d8d4cc;
+  color: var(--text);
 }
 
 input,
 select,
 button {
   font: inherit;
-  color: #eeeae3;
-  background: #1b1b1b;
-  border: 1px solid #3a3a3a;
+  color: var(--text-input);
+  background: var(--bg-elevated);
+  border: 1px solid var(--stroke-input);
   border-radius: 2px;
   padding: 0.35rem 0.45rem;
 }
@@ -86,7 +139,7 @@ input[type="range"] {
 }
 
 button:hover {
-  border-color: #888;
+  border-color: var(--stroke-hover);
 }
 
 .file input {
@@ -96,7 +149,7 @@ button:hover {
 
 #status {
   margin: 0;
-  color: #8f8b84;
+  color: var(--text-muted);
   font-size: 0.8rem;
   line-height: 1.35;
 }
@@ -106,12 +159,12 @@ button:hover {
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: lowercase;
-  color: #d8d4cc;
+  color: var(--text);
 }
 
 .hint {
   margin: 0;
-  color: #6f6b64;
+  color: var(--text-hint);
   font-size: 0.75rem;
   line-height: 1.35;
 }
@@ -146,4 +199,5 @@ canvas {
   width: 100%;
   height: 100%;
   cursor: crosshair;
+  background: var(--bg);
 }

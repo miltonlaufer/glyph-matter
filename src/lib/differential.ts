@@ -73,6 +73,7 @@ function fillRings(pack: SamplePack): DiffNode[][] {
   return rings;
 }
 
+/** Contour rings grouped by glyph; fill rings if the pack has no contours. */
 export function ringsFromPack(pack: SamplePack): DiffNode[][] {
   const contour = contourRings(pack);
   return contour.length > 0 ? contour : fillRings(pack);
@@ -92,6 +93,7 @@ function edgeLengths(rings: DiffNode[][]): number[] {
   return out;
 }
 
+/** Insert nodes on edges longer than `maxLen`, up to `budget` insertions. */
 export function splitLongEdges(
   ring: DiffNode[],
   maxLen: number,
@@ -192,6 +194,7 @@ export class DifferentialGrowth {
   private targetCell = 12;
   private acc = 0;
 
+  /** Patch speed, split length, and node cap. */
   configure(options: DifferentialOptions): this {
     if (options.speed !== undefined) this.speed = Math.min(24, Math.max(1, options.speed));
     if (options.splitLen !== undefined) this.splitLen = options.splitLen;
@@ -203,12 +206,14 @@ export class DifferentialGrowth {
     return this.rings.length === 0;
   }
 
+  /** Total nodes across all rings. */
   nodeCount(): number {
     let n = 0;
     for (const ring of this.rings) n += ring.length;
     return n;
   }
 
+  /** Start rings on `from` and pull toward `to` as {@link DifferentialGrowth.setProgress} rises. */
   seedMorph(from: SamplePack, to: SamplePack): this {
     this.rings = ringsFromPack(from).map((ring) =>
       ring.map((n) => ({ ...n, vx: 0, vy: 0 })),
@@ -223,11 +228,13 @@ export class DifferentialGrowth {
     return this;
   }
 
+  /** 0 = grow freely, 1 = settle onto the target word. */
   setProgress(u: number): this {
     this.progress = Math.min(1, Math.max(0, u));
     return this;
   }
 
+  /** Drop rings and targets. */
   clear(): this {
     this.rings = [];
     this.targets = [];
@@ -237,6 +244,7 @@ export class DifferentialGrowth {
     return this;
   }
 
+  /** One integration slice. `dt` is seconds, clamped to at most 1/30. */
   step(dt: number): this {
     const t = Math.min(Math.max(dt, 0), 1 / 30);
     if (t === 0 || this.empty) return this;
@@ -245,6 +253,7 @@ export class DifferentialGrowth {
     return this;
   }
 
+  /** Speed-scaled substeps from elapsed seconds. */
   tick(dt: number): this {
     if (this.empty || this.speed <= 0) return this;
     this.acc += dt * (this.speed / 10);

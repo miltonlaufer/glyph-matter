@@ -68,9 +68,9 @@ export type SamplePack = {
 };
 
 export const DEFAULT_OPTIONS: Required<GlyphMatterOptions> = {
-  samplingMode: "contour",
+  samplingMode: "both",
   contourSpacing: 4,
-  fillSpacing: 6,
+  fillSpacing: 5,
   fontSize: 160,
   fillRule: "nonzero",
   includeSpaces: false,

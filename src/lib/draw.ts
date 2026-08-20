@@ -29,6 +29,7 @@ export type DrawSamplesOptions = {
   originX?: number;
 };
 
+/** Camera that maps world coordinates onto a canvas backing store. */
 export function makeView(
   bounds: Bounds,
   canvasWidth: number,
@@ -59,6 +60,7 @@ export function makeView(
   return { scale, ox, oy, dpr };
 }
 
+/** Convert CSS pixel coordinates to world space. */
 export function screenToWorld(cssX: number, cssY: number, view: View): Vec {
   return {
     x: (cssX * view.dpr - view.ox) / view.scale,
@@ -73,6 +75,7 @@ export type DrawablePoint = {
   life?: number;
 };
 
+/** Draw fill then contour dots. `life` becomes alpha. */
 export function drawParticles(
   ctx: CanvasRenderingContext2D,
   points: DrawablePoint[],
@@ -117,6 +120,7 @@ export type AutomataGrid = {
   cells: Uint8Array;
 };
 
+/** Draw a CA / growth grid as dots in world space. */
 export function drawAutomata(
   ctx: CanvasRenderingContext2D,
   grid: AutomataGrid,
@@ -147,6 +151,7 @@ export function drawAutomata(
   }
 }
 
+/** Stroke closed rings and draw their nodes (differential growth). */
 export function drawRings(
   ctx: CanvasRenderingContext2D,
   rings: Array<Array<{ x: number; y: number }>>,
@@ -187,6 +192,7 @@ export function drawRings(
   }
 }
 
+/** Draw a static pack (no physics). Builds a {@link View} from `pack.bounds`. */
 export function drawSamples(
   ctx: CanvasRenderingContext2D,
   pack: SamplePack,

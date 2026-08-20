@@ -8,6 +8,11 @@ import type {
   SamplingMode,
 } from "./types.ts";
 
+/**
+ * Sample a string from an OpenType font into a {@link SamplePack}: points
+ * that still know which glyph they came from. Export the pack to ship a
+ * work without the font; load it later with {@link GlyphMatter.loadSamples}.
+ */
 export class GlyphMatter {
   samplingMode: SamplingMode;
   contourSpacing: number;
@@ -30,6 +35,7 @@ export class GlyphMatter {
     this.includeSpaces = resolved.includeSpaces;
   }
 
+  /** Patch sampling settings. Call {@link GlyphMatter.resample} to apply them. */
   configure(options: GlyphMatterOptions): this {
     if (options.samplingMode !== undefined) this.samplingMode = options.samplingMode;
     if (options.contourSpacing !== undefined) this.contourSpacing = options.contourSpacing;
@@ -81,6 +87,7 @@ export class GlyphMatter {
     return structuredClone(this.pack);
   }
 
+  /** JSON string of {@link GlyphMatter.exportSamples}. `space` is passed to `JSON.stringify`. */
   exportSamplesJSON(space = 0): string {
     return packToJSON(this.exportSamples(), space);
   }
@@ -107,18 +114,22 @@ export class GlyphMatter {
     return this;
   }
 
+  /** Current pack, or `null` if nothing has been sampled or loaded. */
   getPack(): SamplePack | null {
     return this.pack;
   }
 
+  /** `pack.points`, or an empty array. */
   getPoints(): SamplePoint[] {
     return this.pack?.points ?? [];
   }
 
+  /** String last sampled or loaded. */
   getText(): string {
     return this.text;
   }
 
+  /** Whether {@link GlyphMatter.sampleFromFont} still has a font in memory. */
   hasFont(): boolean {
     return this.font !== null;
   }

@@ -1,3 +1,4 @@
+/** Sample OpenType text into identity-preserving matter, then animate it. */
 export { GlyphMatter } from "./GlyphMatter.ts";
 export { loadFont, sampleText, layoutGlyphs } from "./font.ts";
 export type { FontSource } from "./font.ts";
@@ -6,7 +7,8 @@ export { drawSamples, drawParticles, drawAutomata, drawRings, makeView, screenTo
 export type { DrawFit, DrawSamplesOptions, View, DrawablePoint, AutomataGrid } from "./draw.ts";
 export { World } from "./world.ts";
 export type { Particle, WorldOptions, WorldPointer } from "./world.ts";
-export type { MorphAlign } from "./morph.ts";
+export { morphParticles } from "./morph.ts";
+export type { MorphAlign, Morphable } from "./morph.ts";
 export { Automata, stepAutomata, stepGrowth, bridgeMask } from "./automata.ts";
 export type { AutomataRule, AutomataOptions, AutomataKind } from "./automata.ts";
 export { DifferentialGrowth, ringsFromPack, splitLongEdges } from "./differential.ts";

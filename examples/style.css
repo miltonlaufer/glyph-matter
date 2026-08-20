@@ -1,0 +1,27 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: #f4f1ea;
+  color: #2a2926;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+
+.caption {
+  position: fixed;
+  top: 12px;
+  left: 16px;
+  z-index: 1;
+  margin: 0;
+}
+
+.caption a {
+  color: inherit;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}

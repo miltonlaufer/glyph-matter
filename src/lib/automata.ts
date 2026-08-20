@@ -236,6 +236,10 @@ function fillAllow(
   }
 }
 
+/**
+ * Pixel grid over letter masks. Field mode ({@link Automata.seedFromPack}) or
+ * word→word in-between ({@link Automata.seedMorph}).
+ */
 export class Automata {
   cols = 0;
   rows = 0;
@@ -259,6 +263,7 @@ export class Automata {
   private allow = new Uint8Array(0);
   private acc = 0;
 
+  /** Patch rule, kind, speed, and confine. */
   configure(options: AutomataOptions): this {
     if (options.rule !== undefined) this.rule = options.rule;
     if (options.kind !== undefined) this.kind = options.kind;
@@ -271,6 +276,7 @@ export class Automata {
     return this.cols === 0 || this.rows === 0;
   }
 
+  /** Count of cells with value `1`. */
   liveCount(): number {
     let n = 0;
     for (const s of this.cells) if (s === 1) n += 1;
@@ -285,6 +291,7 @@ export class Automata {
     this.rows = Math.max(1, Math.ceil(bounds.h / cell) + pad * 2);
   }
 
+  /** Rasterize one word. Field / playground mode. */
   seedFromPack(pack: SamplePack): this {
     const cell = cellSizeOf(pack.bounds);
     const pad = this.confine ? 2 : PAD;
@@ -346,6 +353,7 @@ export class Automata {
     return this;
   }
 
+  /** 0–1 along a morph. Grows the allow region toward the target word. */
   setProgress(u: number): this {
     this.progress = Math.min(1, Math.max(0, u));
     this.refreshAllow();
@@ -353,6 +361,7 @@ export class Automata {
     return this;
   }
 
+  /** Copy the target mask into live cells. */
   fillTarget(): this {
     if (this.toMask.length !== this.cells.length) return this;
     this.cells.set(this.toMask);
@@ -365,6 +374,7 @@ export class Automata {
     this.mask = this.allow;
   }
 
+  /** Restore the seed (source word) and progress `0`. */
   reset(): this {
     this.cells.set(this.seed);
     this.acc = 0;
@@ -373,6 +383,7 @@ export class Automata {
     return this;
   }
 
+  /** Empty the grid. */
   clear(): this {
     this.cols = 0;
     this.rows = 0;
@@ -390,6 +401,7 @@ export class Automata {
     return this;
   }
 
+  /** One generation ({@link stepAutomata} or {@link stepGrowth}). */
   step(): this {
     if (this.empty) return this;
     if (this.kind === "growth") {
@@ -409,6 +421,7 @@ export class Automata {
     return this;
   }
 
+  /** Run a bounded number of generations from elapsed seconds. */
   tick(dt: number): this {
     if (this.empty || this.speed <= 0) return this;
     const rate = this.kind === "growth" ? this.speed * 1.4 : this.speed;

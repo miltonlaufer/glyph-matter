@@ -2,6 +2,7 @@ import type { SamplePack } from "./types.ts";
 
 const IDENT = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
+/** Validate a pack object or JSON string. Throws if `v` is not `1` or fields are missing. */
 export function parsePack(source: SamplePack | string | unknown): SamplePack {
   const data: unknown = typeof source === "string" ? JSON.parse(source) : source;
   if (!data || typeof data !== "object") {
@@ -23,10 +24,12 @@ export function parsePack(source: SamplePack | string | unknown): SamplePack {
   return pack;
 }
 
+/** `JSON.stringify` of a pack. */
 export function packToJSON(pack: SamplePack, space = 0): string {
   return JSON.stringify(pack, null, space);
 }
 
+/** ES module source: `export const <exportName> = { ... }`. */
 export function packToModule(pack: SamplePack, exportName = "glyphPack"): string {
   if (!IDENT.test(exportName)) {
     throw new Error(`Invalid JS export name: ${exportName}`);
