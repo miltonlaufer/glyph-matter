@@ -170,4 +170,4 @@ the TypeScript source through a bundler.
 
 ## License
 
-[MIT](LICENSE) © Milton Laufer
+[MIT](LICENSE) © Milton Läufer
