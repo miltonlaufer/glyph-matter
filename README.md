@@ -61,7 +61,8 @@ npm run dev
 ```
 
 Open `http://localhost:5173/` for the interactive workbench (font sampling,
-word→word morph, dissolve, automata, growth, differential growth).
+word→word morph, dissolve, image contours, effects). On a narrow screen the
+sidebar hides behind a hamburger at the top left.
 
 ![The glyph-matter workbench: sidebar controls and a dissolving word on the canvas](docs/media/workbench.png)
 
@@ -196,11 +197,11 @@ Publish a fresh copy of the live folder with `npm run build:examples` (writes `.
 
 ![Particles swirling around a well below the dissolving word](docs/media/vortex.gif)
 
-**Image** — Canny contours of a photo, then back to a word (`glyph` → sunset → `matter` → book):
+**Image** — Canny contours of a photo (`glyph` → sunset → `matter` → book). Extra points grow from existing ink; rest pose is slightly loose so the cloud stays alive.
 
 ![Particles forming the word glyph, then a sunset photograph, then matter, then a book](docs/media/image.gif)
 
-**Audio** — `glyph` → `matter` → `dancing`, with wind from *Terminal Hours*. Click to start (browser autoplay).
+**Audio** — `glyph` → `matter` → `dancing`, with wind from *Terminal Hours*. Click to start (browser autoplay); **stop** at the bottom. Optional **lowpass** is analyser-only (the mix stays dry); a log slider sets the cutoff (80 Hz–8 kHz).
 
 ## Using with React
 

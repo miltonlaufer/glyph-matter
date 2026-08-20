@@ -55,11 +55,12 @@ of the public API.
 
 ```text
 font + string  →  SamplePack  →  World / Automata / DifferentialGrowth  →  canvas
-                     ↑
+image URL      ↗       ↑
               JSON or JS module (no font at runtime)
 ```
 
-1. **Sample** a string from a font (`GlyphMatter` or `sampleText`).
+1. **Sample** a string from a font (`GlyphMatter` or `sampleText`), or a
+   bitmap (`sampleImage` / `sampleFromImage`).
 2. Optionally **export** the pack and load it later without the font.
 3. **Animate** with `World` (springs / gas / effects), optional `Sequence`
    (timed words), `Automata`, or `DifferentialGrowth`.
@@ -604,7 +605,9 @@ Low-level rematch used by `World.morphTo`.
   shorter target (`exit: true`) and die on arrival.
 - Spare points inside a matched letter do the same.
 - New letters of a longer target bud from the closest existing letter.
-- Extra dest points (a photo vs a word) clone from existing particles.
+- When one side is a single glyph (a photo pack) and the other is a word,
+  matching is one cloud, not a middle-letter slot. Extra dest points clone
+  from existing particles so they bloom out of the current ink.
 
 `align` is applied before matching (`"origin"` default).
 

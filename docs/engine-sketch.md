@@ -67,9 +67,12 @@ In-between processes (how ink travels while the rest pose retargets):
 
 ### Word → image / webcam
 
-The image is a density field (luminance, edges, or a mask). Particles descend the field, or the letter SDF is interpolated toward the image SDF. Reverse it and you have a live calligram: a face made of a text that is still a text.
+**Now:** a photo is sampled into the same point pack a word uses (`sampleImage`:
+Canny edges, not a dark rectangle). `World.morphTo` treats a one-glyph pack as
+one cloud; extra points clone from existing ink.
 
-Optical flow from the camera can be a behavior, not only a target — letters drift with the viewer.
+**Sketch, not built:** luminance-field descent, SDF blend toward an image,
+webcam as target, optical flow as a behavior.
 
 ## Behaviors as plugins
 
@@ -128,12 +131,14 @@ The loop above is running in `glyph-matter`:
 
 | Sketch piece | Code |
 | --- | --- |
-| Sample (live font or shipped pack) | `GlyphMatter`, `sample.ts`, `pack.ts` |
+| Sample (live font, image, or shipped pack) | `GlyphMatter`, `sample.ts`, `image.ts`, `pack.ts` |
 | Point body + identity (`g`, home pose) | `SamplePoint`, `Particle` |
 | HomeSpring + gas + pointer | `World` (`legibility`, `gas`) |
-| Word → word pairing | `morph.ts` |
+| Word → word pairing; extras bud from live ink | `morph.ts` |
 | Field body (pixel grid) | `automata.ts` |
 | Contour body (growing outlines) | `differential.ts` |
 | Draw | `draw.ts` (canvas 2D) |
 
-Not built yet: image/webcam targets, flocking, flow fields, metaballs, WebGL.
+Built as image contours (`sampleImage`, Canny + texture stipple) and audio
+wind (`windFromAnalyser`). Not built yet: webcam targets, flocking, flow
+fields, metaballs, WebGL.

@@ -57,7 +57,9 @@ or `@ts-expect-error` comments to silence a check.
 - OpenType outlines are a **source format**. The live object is a point
   cloud (or grid / ring) that still knows which glyph it came from.
 - Word→word morph should keep shared letters when it can. Extra ink flies
-  into the remaining letters instead of popping out of existence.
+  into the remaining letters instead of popping out of existence. Extra dest
+  points (word→image) clone from existing particles instead of appearing at
+  the target.
 - In-betweens (springs, dissolve, automata, growth, differential growth)
   are ways ink travels from one word to another, not separate engines.
 
