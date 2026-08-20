@@ -1,4 +1,11 @@
-export const FONT_URL = "/fonts/EBGaramond-Regular.ttf";
+export const FONT_URL = `${import.meta.env.BASE_URL}fonts/EBGaramond-Regular.ttf`;
+
+export const SAMPLE = {
+  samplingMode: "both" as const,
+  fontSize: 140,
+  contourSpacing: 2,
+  fillSpacing: 2.5,
+};
 
 export type Box = { x: number; y: number; w: number; h: number };
 

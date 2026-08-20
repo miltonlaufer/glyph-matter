@@ -215,13 +215,20 @@ async function main() {
     await waitFor(`http://127.0.0.1:${PORT}/json/version`);
     const { cdp, ws } = await connectPage();
 
-    await setViewport(cdp, 1280, 800);
-    await goto(cdp, `${BASE}/`);
-    await waitForInk(cdp);
-    await sleep(400);
-    const workbenchPng = join(OUT, "workbench.png");
-    await screenshotPng(cdp, workbenchPng);
-    console.log("wrote", workbenchPng);
+    const filter = (process.env.CAPTURE ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (filter.length === 0 || filter.includes("workbench")) {
+      await setViewport(cdp, 1280, 800);
+      await goto(cdp, `${BASE}/`);
+      await waitForInk(cdp);
+      await sleep(400);
+      const workbenchPng = join(OUT, "workbench.png");
+      await screenshotPng(cdp, workbenchPng);
+      console.log("wrote", workbenchPng);
+    }
 
     const examples = [
       {
@@ -252,9 +259,40 @@ async function main() {
         height: 300,
         scale: 560,
       },
+      {
+        name: "attract",
+        url: `${BASE}/examples/attract.html`,
+        seconds: 7.6,
+        width: 800,
+        height: 300,
+        scale: 560,
+      },
+      {
+        name: "wind",
+        url: `${BASE}/examples/wind.html`,
+        seconds: 6.8,
+        width: 800,
+        height: 300,
+        scale: 560,
+      },
+      {
+        name: "vortex",
+        url: `${BASE}/examples/vortex.html`,
+        seconds: 7.6,
+        width: 800,
+        height: 300,
+        scale: 560,
+      },
     ];
 
-    for (const job of examples) {
+    const jobs = filter.length
+      ? examples.filter((job) => filter.includes(job.name))
+      : examples;
+    if (filter.length && jobs.length === 0 && !filter.includes("workbench")) {
+      throw new Error(`CAPTURE=${filter.join(",")} matched no examples`);
+    }
+
+    for (const job of jobs) {
       await setViewport(cdp, job.width, job.height);
       await goto(cdp, job.url);
       await waitForInk(cdp);

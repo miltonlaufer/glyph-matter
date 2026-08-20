@@ -7,6 +7,10 @@ Public surface of `glyph-matter`. Import from the package root
 import {
   GlyphMatter,
   World,
+  Sequence,
+  applyEffect,
+  translatePack,
+  World,
   Automata,
   DifferentialGrowth,
   loadFont,
@@ -50,8 +54,8 @@ font + string  →  SamplePack  →  World / Automata / DifferentialGrowth  → 
 
 1. **Sample** a string from a font (`GlyphMatter` or `sampleText`).
 2. Optionally **export** the pack and load it later without the font.
-3. **Animate** with `World` (springs / gas), `Automata` (Life / Seeds / Brain
-   or Eden growth), or `DifferentialGrowth` (splitting, self-repelling rings).
+3. **Animate** with `World` (springs / gas / effects), optional `Sequence`
+   (timed words), `Automata`, or `DifferentialGrowth`.
 4. **Draw** with `drawParticles`, `drawAutomata`, or `drawRings`.
 
 ---
@@ -427,9 +431,103 @@ signal.
 
 ### `step(dt: number): this`
 
-Integrate springs, gas, pointer, drag. `dt` is seconds, clamped to at most
-1/30. Exiting particles that have arrived at home are removed. Fading-in
-particles increase `life`.
+Integrate springs, gas, pointer, extra effects, and drag. `dt` is seconds,
+clamped to at most 1/30. Exiting particles that have arrived at home are
+removed. Fading-in particles increase `life`.
+
+### `addEffect(effect: ParticleEffect): this`
+
+Append a force applied every `step`. See [Particle effects](#particle-effects).
+
+### `clearEffects(): this`
+
+Drop extra forces. Pointer repulsion (`world.pointer`) is unchanged.
+
+`effects` is a public array of the active forces.
+
+---
+
+## Particle effects
+
+Extra accelerations on `World`. They stack with springs, gas, and the pointer.
+`World.step` scales extra forces against spring stiffness so a formed word
+still leans in the wind instead of snapping straight back. Radius on attract /
+repel / vortex is a **cutoff distance** from the well: inside it the force
+falls off linearly; beyond it the force is zero.
+
+| `kind` | Fields | Behavior |
+| --- | --- | --- |
+| `"wind"` | `vx`, `vy`, `gust?`, `period?`, `wavelength?` | Traveling gust: positive half of a sawtooth along the wind. `period` 0 = constant. `wavelength` 0 = all particles pulse together. Defaults `1.35` s and `240` units. |
+| `"attract"` | `x`, `y`, `strength`, `radius?` | Pull toward a point (point gravity). No `radius` = infinite range |
+| `"repel"` | `x`, `y`, `strength`, `radius?` | Push away from a point |
+| `"gravity"` | `x?`, `y?` | Constant acceleration. Default `{ x: 0, y: 420 }` (down in this engine) |
+| `"vortex"` | `x`, `y`, `strength`, `radius?` | Tangential swirl (positive = counterclockwise), slight inward bias |
+
+```ts
+world.addEffect({ kind: "wind", vx: 80, vy: 0, gust: 30, period: 1.4, wavelength: 240 });
+world.addEffect({ kind: "attract", x: 120, y: 40, strength: 160, radius: 500 });
+```
+
+`applyEffect(effect, particle, dt, time?)` is the same function `World.step` uses,
+exported for tests and custom integrators. `time` is seconds; wind uses it for
+the sawtooth. `windEnvelope(phase)` is the 0–1 pulse.
+
+---
+
+## `Sequence`
+
+Timed list of words. Samples through a `GlyphMatter` that already has a font,
+morphs on a `World`. You still run the animation frame and draw.
+
+```ts
+const show = new Sequence(gm, world, { loop: true })
+  .addAnimationStep({ word: "glyph", duration: 1 })
+  .addAnimationSteps([
+    { word: "matter", duration: 1.2, gas: 90, inBetween: "dissolve" },
+    { word: "glyph", x: 40, y: 0, inBetween: "spring" },
+  ])
+  .play();
+
+show.tick(dt); // timeline + world.step
+```
+
+Driving `world.morphTo`, `world.configure`, and `world.step` yourself is still
+the fully manual path — `Sequence` is optional sugar.
+
+### `AnimationStep`
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `word` | `string` | Sampled with the current `GlyphMatter` settings |
+| `x`, `y` | `number?` | World-space shift of the layout origin |
+| `gas`, `legibility`, `stiffness`, `damping` | `number?` | Passed to `World.configure` for this step |
+| `duration` | `number?` | Seconds at rest as this word (default `0.8`) |
+| `inBetween` | `"spring"` \| `"dissolve"` | How ink travels *to* this word. Ignored on the first step. Default `"dissolve"` |
+| `effects` | `ParticleEffect[]?` | Replace `world.effects` for this step. Omit to leave them; `[]` to clear |
+
+### `SequenceOptions`
+
+`loop` (default `true`), `dissolveDropT`, `dissolveT`, `travelT`, `formT`
+(same timings as the workbench dissolve).
+
+### Methods
+
+| Method | Meaning |
+| --- | --- |
+| `addAnimationStep(step)` | Append one step |
+| `addAnimationSteps(steps)` | Append many |
+| `play()` | Load the first word; `tick` will advance |
+| `pause()` | Freeze the timeline (`tick` still steps physics) |
+| `reset()` | First word, paused |
+| `clear()` | Drop all steps |
+| `tick(dt)` | Advance timeline if playing, then `world.step(dt)` |
+| `currentStep()` | Active step, or `null` |
+
+Public fields: `steps`, `index`, `phase`, `elapsed`, `loop`, `playing`, `restore`.
+
+### `translatePack(pack, x, y): SamplePack`
+
+Shift points, glyphs, and bounds. Used by `Sequence` when a step has `x`/`y`.
 
 ---
 

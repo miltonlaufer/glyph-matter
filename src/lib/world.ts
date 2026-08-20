@@ -1,5 +1,6 @@
 import { boundsOf } from "./path.ts";
 import { morphParticles, type MorphAlign } from "./morph.ts";
+import { applyEffect, type ParticleEffect } from "./effects.ts";
 import type { GlyphRecord, SampleKind, SamplePack } from "./types.ts";
 
 /** Live sample with velocity. `homeX`/`homeY` are the rest pose. */
@@ -55,6 +56,9 @@ export class World {
   mouseForce = 2800;
   fade = 0.55;
   pointer: WorldPointer | null = null;
+  effects: ParticleEffect[] = [];
+  /** Seconds simulated, for pulsing wind. */
+  elapsed = 0;
 
   /** Patch physics knobs (`legibility`, springs, gas, pointer, fade). */
   configure(options: WorldOptions): this {
@@ -137,6 +141,18 @@ export class World {
     return this;
   }
 
+  /** Append a force (wind, attract, gravity, vortex, repel). Applied every {@link World.step}. */
+  addEffect(effect: ParticleEffect): this {
+    this.effects.push(effect);
+    return this;
+  }
+
+  /** Drop all extra forces. Pointer repulsion is separate (`pointer`). */
+  clearEffects(): this {
+    this.effects = [];
+    return this;
+  }
+
   /** Snap every particle to its home and zero velocity. */
   home(): this {
     for (const p of this.particles) {
@@ -197,12 +213,13 @@ export class World {
   }
 
   /**
-   * Integrate springs, gas, pointer, and drag.
+   * Integrate springs, gas, pointer, extra effects, and drag.
    * @param dt Seconds since last frame; clamped to at most 1/30.
    */
   step(dt: number): this {
     const t = Math.min(Math.max(dt, 0), 1 / 30);
     if (t === 0) return this;
+    this.elapsed += t;
     const legibility = Math.min(1, Math.max(0, this.legibility));
     const k = this.stiffness * legibility;
     const c = this.damping * (0.35 + 0.65 * legibility);
@@ -239,6 +256,10 @@ export class World {
           p.vy += (dy / d) * f;
         }
       }
+      // Springs of size `k` cancel a raw extra accel. Scale so wind/wells
+      // still lean a formed word instead of vanishing at legibility 1.
+      const effectDt = t * (1 + k / 4);
+      for (const effect of this.effects) applyEffect(effect, p, effectDt, this.elapsed);
       p.vx *= drag;
       p.vy *= drag;
       p.x += p.vx * t;

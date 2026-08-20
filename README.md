@@ -13,6 +13,19 @@ The architecture sketch is in [docs/engine-sketch.md](docs/engine-sketch.md).
 This is an early public library. Issues, patches, and experiments are welcome
 — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Contents
+
+- [Install](#install)
+- [Workbench](#workbench)
+- [Quick start](#quick-start)
+- [Examples](#examples)
+- [Using with React](#using-with-react)
+- [Using with Vue.js](#using-with-vuejs)
+- [Documentation](#documentation)
+- [Related work](#related-work)
+- [Status](#status)
+- [License](#license)
+
 ## Install
 
 The package is not on npm yet. Use git, or clone the repo:
@@ -41,7 +54,7 @@ From this repo, import the source directly:
 import { GlyphMatter, World } from "./src/lib/index.ts";
 ```
 
-### Workbench
+## Workbench
 
 ```bash
 npm run dev
@@ -59,6 +72,7 @@ word→word morph, dissolve, automata, growth, differential growth).
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm run build` | Typecheck, then production build of the workbench |
+| `npm run build:examples` | Static examples into `../glyph-matter-examples` |
 
 ## Quick start
 
@@ -111,14 +125,50 @@ const next = matter.samplePack("matter");
 world.morphTo(next, "origin");
 ```
 
-Runnable copies of these sketches live in [`examples/`](examples/). After
-`npm run dev`:
+Or a timed list — `Sequence` owns the in-between; you still own the render loop:
 
-| Example | URL |
-| --- | --- |
-| Field: a word as springy matter | http://localhost:5173/examples/field.html |
-| Word → word morph | http://localhost:5173/examples/morph.html |
-| Dissolve as the in-between | http://localhost:5173/examples/in-between.html |
+```ts
+const show = new Sequence(gm, world)
+  .addAnimationStep({ word: "glyph", duration: 1.2 })
+  .addAnimationSteps([
+    { word: "matter", duration: 1.2, effects: [{ kind: "wind", vx: 40, vy: 0, gust: 25 }] },
+    { word: "glyph", x: 30, inBetween: "spring" },
+  ])
+  .play();
+
+function frame(dt: number) {
+  show.tick(dt); // advances the list, then world.step
+  drawParticles(ctx, world.particles, view);
+}
+```
+
+Forces can also be added directly, with no sequence:
+
+```ts
+world.addEffect({ kind: "attract", x: 0, y: 0, strength: 120, radius: 400 });
+world.addEffect({ kind: "gravity", y: 300 });
+world.step(dt);
+```
+
+## Examples
+
+Live sketches — workbench and examples:
+**[miltonlaufer.com.ar/glyph-matter-examples](https://www.miltonlaufer.com.ar/glyph-matter-examples)**.
+
+Source for those pages is the workbench plus [`examples/`](examples/). After `npm run dev`:
+
+| Example | Local | Live |
+| --- | --- | --- |
+| Workbench | http://localhost:5173/ | [workbench](https://www.miltonlaufer.com.ar/glyph-matter-examples/) |
+| Field: a word as springy matter | http://localhost:5173/examples/field.html | [field](https://www.miltonlaufer.com.ar/glyph-matter-examples/field.html) |
+| Word → word morph | http://localhost:5173/examples/morph.html | [morph](https://www.miltonlaufer.com.ar/glyph-matter-examples/morph.html) |
+| Dissolve as the in-between | http://localhost:5173/examples/in-between.html | [in-between](https://www.miltonlaufer.com.ar/glyph-matter-examples/in-between.html) |
+| Attract (point well) | http://localhost:5173/examples/attract.html | [attract](https://www.miltonlaufer.com.ar/glyph-matter-examples/attract.html) |
+| Wind (traveling gust) | http://localhost:5173/examples/wind.html | [wind](https://www.miltonlaufer.com.ar/glyph-matter-examples/wind.html) |
+| Vortex | http://localhost:5173/examples/vortex.html | [vortex](https://www.miltonlaufer.com.ar/glyph-matter-examples/vortex.html) |
+| Sequence + wind / attract | http://localhost:5173/examples/sequence.html | [sequence](https://www.miltonlaufer.com.ar/glyph-matter-examples/sequence.html) |
+
+Publish a fresh copy of the live folder with `npm run build:examples` (writes `../glyph-matter-examples`).
 
 **Field** — pointer push, click to scatter:
 
@@ -131,6 +181,168 @@ Runnable copies of these sketches live in [`examples/`](examples/). After
 **Dissolve** — word → gas → word:
 
 ![The word glyph dissolving into gas and forming the word matter](docs/media/dissolve.gif)
+
+**Attract** — point well below the word (offset 0, 76 / strength 202 / radius 511):
+
+![Particles dissolving between glyph and matter while a well below the word pulls them](docs/media/attract.gif)
+
+**Wind** — traveling gust, positive half of a sawtooth (140, 0 / gust 50 / period 1.4 s / wavelength 677):
+
+![A gust sweeping through the word from left to right](docs/media/wind.gif)
+
+**Vortex** — swirl well below the word (offset 0, 160 / strength 577 / radius 289):
+
+![Particles swirling around a well below the dissolving word](docs/media/vortex.gif)
+
+## Using with React
+
+The engine is canvas + `requestAnimationFrame`. Host that loop in `useEffect`
+and tear it down on unmount. Put the `.ttf` in `public/fonts/` (Vite) so the
+URL below resolves.
+
+```tsx
+import { useEffect, useRef } from "react";
+import {
+  GlyphMatter,
+  World,
+  drawParticles,
+  makeView,
+} from "glyph-matter";
+
+export function GlyphField({ text = "glyph" }: { text?: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+
+    let raf = 0;
+    let cancelled = false;
+    const world = new World();
+
+    const resize = () => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(canvas.clientWidth * dpr);
+      canvas.height = Math.round(canvas.clientHeight * dpr);
+      return dpr;
+    };
+
+    void (async () => {
+      const matter = new GlyphMatter({ samplingMode: "both", fontSize: 160 });
+      await matter.sampleFromFont("/fonts/YourFont.ttf", text);
+      const pack = matter.getPack();
+      if (cancelled || !pack) return;
+      world.load(pack);
+
+      const frame = () => {
+        const dpr = resize();
+        world.step(1 / 60);
+        const view = makeView(world.homeBounds(), canvas.width, canvas.height, {
+          fit: "contain",
+          dpr,
+          baseline: 0,
+          em: pack.sampling.fontSize,
+        });
+        drawParticles(ctx, world.particles, view, {
+          contourColor: "#1a1a1a",
+          fillColor: "#6a6a6a",
+        });
+        raf = requestAnimationFrame(frame);
+      };
+      raf = requestAnimationFrame(frame);
+    })();
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [text]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ display: "block", width: "100%", height: "100%" }}
+    />
+  );
+}
+```
+
+Word→word is the same world: call `world.morphTo(matter.samplePack("matter"), "origin")` from a button handler, or drive a `Sequence` with `show.tick(dt)` inside the frame loop.
+
+## Using with Vue.js
+
+Same loop, mounted on the canvas ref. This is `<script setup>` for Vue 3.
+
+```vue
+<script setup lang="ts">
+import { onMounted, onUnmounted, ref } from "vue";
+import {
+  GlyphMatter,
+  World,
+  drawParticles,
+  makeView,
+} from "glyph-matter";
+
+const props = withDefaults(defineProps<{ text?: string }>(), { text: "glyph" });
+const canvasRef = ref<HTMLCanvasElement | null>(null);
+let raf = 0;
+let cancelled = false;
+
+onMounted(async () => {
+  const canvas = canvasRef.value;
+  const ctx = canvas?.getContext("2d");
+  if (!canvas || !ctx) return;
+
+  const resize = () => {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(canvas.clientWidth * dpr);
+    canvas.height = Math.round(canvas.clientHeight * dpr);
+    return dpr;
+  };
+
+  const matter = new GlyphMatter({ samplingMode: "both", fontSize: 160 });
+  await matter.sampleFromFont("/fonts/YourFont.ttf", props.text);
+  const pack = matter.getPack();
+  if (cancelled || !pack) return;
+  const world = new World().load(pack);
+
+  const frame = () => {
+    const dpr = resize();
+    world.step(1 / 60);
+    const view = makeView(world.homeBounds(), canvas.width, canvas.height, {
+      fit: "contain",
+      dpr,
+      baseline: 0,
+      em: pack.sampling.fontSize,
+    });
+    drawParticles(ctx, world.particles, view, {
+      contourColor: "#1a1a1a",
+      fillColor: "#6a6a6a",
+    });
+    raf = requestAnimationFrame(frame);
+  };
+  raf = requestAnimationFrame(frame);
+});
+
+onUnmounted(() => {
+  cancelled = true;
+  cancelAnimationFrame(raf);
+});
+</script>
+
+<template>
+  <canvas ref="canvasRef" class="glyph-field" />
+</template>
+
+<style scoped>
+.glyph-field {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+</style>
+```
 
 ## Documentation
 

@@ -2,11 +2,22 @@
 export { GlyphMatter } from "./GlyphMatter.ts";
 export { loadFont, sampleText, layoutGlyphs } from "./font.ts";
 export type { FontSource } from "./font.ts";
-export { parsePack, packToJSON, packToModule } from "./pack.ts";
+export { parsePack, packToJSON, packToModule, translatePack } from "./pack.ts";
 export { drawSamples, drawParticles, drawAutomata, drawRings, makeView, screenToWorld } from "./draw.ts";
 export type { DrawFit, DrawSamplesOptions, View, DrawablePoint, AutomataGrid } from "./draw.ts";
 export { World } from "./world.ts";
 export type { Particle, WorldOptions, WorldPointer } from "./world.ts";
+export { applyEffect, windEnvelope } from "./effects.ts";
+export type {
+  ParticleEffect,
+  WindEffect,
+  AttractEffect,
+  RepelEffect,
+  GravityEffect,
+  VortexEffect,
+} from "./effects.ts";
+export { Sequence } from "./sequence.ts";
+export type { AnimationStep, SequenceOptions, InBetween } from "./sequence.ts";
 export { morphParticles } from "./morph.ts";
 export type { MorphAlign, Morphable } from "./morph.ts";
 export { Automata, stepAutomata, stepGrowth, bridgeMask } from "./automata.ts";

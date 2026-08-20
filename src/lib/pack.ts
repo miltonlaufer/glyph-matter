@@ -29,6 +29,22 @@ export function packToJSON(pack: SamplePack, space = 0): string {
   return JSON.stringify(pack, null, space);
 }
 
+/** Shift a pack in world space without resampling. */
+export function translatePack(pack: SamplePack, x: number, y: number): SamplePack {
+  if (x === 0 && y === 0) return pack;
+  return {
+    ...pack,
+    bounds: {
+      x: pack.bounds.x + x,
+      y: pack.bounds.y + y,
+      w: pack.bounds.w,
+      h: pack.bounds.h,
+    },
+    glyphs: pack.glyphs.map((g) => ({ ...g, x: g.x + x, y: g.y + y })),
+    points: pack.points.map((p) => ({ ...p, x: p.x + x, y: p.y + y })),
+  };
+}
+
 /** ES module source: `export const <exportName> = { ... }`. */
 export function packToModule(pack: SamplePack, exportName = "glyphPack"): string {
   if (!IDENT.test(exportName)) {

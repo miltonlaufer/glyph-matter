@@ -2,7 +2,10 @@
  * Word → word: shared letters keep their ink; extras fly into the shorter word.
  */
 import { GlyphMatter, World, drawParticles, makeView } from "../src/lib/index.ts";
-import { FONT_URL, loop, sizeCanvas, unionBounds } from "./shared.ts";
+import { mountSiteNav } from "./nav.ts";
+import { FONT_URL, SAMPLE, loop, sizeCanvas, unionBounds } from "./shared.ts";
+
+mountSiteNav();
 
 const canvas = document.querySelector("canvas");
 if (!canvas) throw new Error("examples/morph.html is missing <canvas>");
@@ -10,7 +13,7 @@ const ctx = canvas.getContext("2d");
 if (!ctx) throw new Error("2d context unavailable");
 
 const words = ["glyph", "matter"] as const;
-const matter = new GlyphMatter({ samplingMode: "both", fontSize: 140, fillSpacing: 5 });
+const matter = new GlyphMatter(SAMPLE);
 await matter.sampleFromFont(FONT_URL, words[0]);
 const from = matter.getPack();
 if (!from) throw new Error("sampling failed");

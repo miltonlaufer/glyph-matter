@@ -4,9 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>glyph-matter</title>
-    <link rel="stylesheet" href="/src/demo/style.css" />
+    <link rel="stylesheet" href="./src/demo/style.css" />
   </head>
   <body>
+    <nav class="caption" aria-label="Examples"></nav>
     <aside>
       <div class="title-row">
         <h1>glyph-matter</h1>
@@ -56,16 +57,6 @@
         </select>
       </label>
       <div id="field-panel" hidden>
-        <label>
-          legibility
-          <span class="val" id="legibilityVal">1.00</span>
-          <input id="legibility" type="range" min="0" max="100" value="100" />
-        </label>
-        <label>
-          gas
-          <span class="val" id="gasVal">90</span>
-          <input id="gas" type="range" min="0" max="240" value="90" />
-        </label>
         <div class="row">
           <button id="scatter" type="button">scatter</button>
           <button id="home" type="button">snap home</button>
@@ -74,11 +65,24 @@
       </div>
 
       <div id="morph-panel">
-        <label>
-          morph to
-          <input id="morphTo" type="text" value="matter" spellcheck="false" />
-        </label>
+        <div id="loopWords">
+          <label class="word-row">
+            then
+            <span class="word-row-inner">
+              <input class="loop-word" type="text" value="matter" spellcheck="false" />
+              <button type="button" class="word-remove" aria-label="remove word">×</button>
+            </span>
+          </label>
+          <label class="word-row">
+            then
+            <span class="word-row-inner">
+              <input class="loop-word" type="text" value="moving" spellcheck="false" />
+              <button type="button" class="word-remove" aria-label="remove word">×</button>
+            </span>
+          </label>
+        </div>
         <div class="row">
+          <button id="addWord" type="button">+ word</button>
           <button id="morph" type="button">morph</button>
         </div>
         <label class="check">
@@ -90,31 +94,113 @@
           <select id="morphProcess">
             <option value="spring">particles (spring)</option>
             <option value="dissolve" selected>dissolve (word → gas → word)</option>
-            <option value="automata">cellular automata</option>
-            <option value="growth">organic growth (dilation)</option>
-            <option value="differential">differential growth</option>
+            <!-- parked: automata, organic growth, differential growth -->
           </select>
         </label>
-        <div id="morph-grid-options" hidden>
-          <label id="ca-rule-row">
-            rule
-            <select id="caRule">
-              <option value="life" selected>Conway's Life (B3/S23)</option>
-              <option value="seeds">Seeds (B2/S)</option>
-              <option value="brain">Brian's Brain</option>
-            </select>
-          </label>
-          <label>
-            speed
-            <span class="val" id="caSpeedVal">10</span>
-            <input id="caSpeed" type="range" min="1" max="24" value="10" />
-          </label>
-        </div>
         <p class="hint">
+          The first word is “text” above. Add more words to the loop.
           The in-between is how ink travels from one word to the next.
-          Differential growth splits and repels the outline; organic growth
-          dilates a grid. Field forces still apply to particle morphs.
         </p>
+      </div>
+
+      <p class="section">effects</p>
+      <label>
+        legibility
+        <span class="val" id="legibilityVal">1.00</span>
+        <input id="legibility" type="range" min="0" max="100" value="100" />
+      </label>
+      <p class="hint">
+        How hard ink tries to remain a word. 1 = locked letters; 0 = gas.
+      </p>
+      <label>
+        gas
+        <span class="val" id="gasVal">90</span>
+        <input id="gas" type="range" min="0" max="240" value="90" />
+      </label>
+      <p class="hint">
+        Random jitter when letters loosen. Full during dissolve (low
+        legibility); none while a word is locked.
+      </p>
+      <label>
+        force
+        <select id="effectKind">
+          <option value="none" selected>none</option>
+          <option value="wind">wind</option>
+          <option value="attract">attract (point)</option>
+          <option value="gravity">gravity (down)</option>
+          <option value="vortex">vortex</option>
+          <option value="repel">repel</option>
+        </select>
+      </label>
+      <div id="effect-wind" hidden>
+        <label>
+          wind x
+          <span class="val" id="windVxVal">140</span>
+          <input id="windVx" type="range" min="-600" max="600" value="140" />
+        </label>
+        <label>
+          wind y
+          <span class="val" id="windVyVal">0</span>
+          <input id="windVy" type="range" min="-600" max="600" value="0" />
+        </label>
+        <label>
+          gust
+          <span class="val" id="windGustVal">50</span>
+          <input id="windGust" type="range" min="0" max="240" value="50" />
+        </label>
+        <label>
+          period
+          <span class="val" id="windPeriodVal">1.4</span>
+          <input id="windPeriod" type="range" min="4" max="40" value="14" />
+        </label>
+        <label>
+          wavelength
+          <span class="val" id="windWaveVal">240</span>
+          <input id="windWave" type="range" min="0" max="800" value="240" />
+        </label>
+        <p class="hint">
+          Wind is a traveling gust: the positive half of a sawtooth. Period is
+          the cycle (slider × 0.1 s). Wavelength is how far a gust spans along
+          the wind; 0 = the whole field pulses together.
+        </p>
+      </div>
+      <div id="effect-point" hidden>
+        <label>
+          offset x
+          <span class="val" id="effectXVal">0</span>
+          <input id="effectX" type="range" min="-600" max="600" value="0" />
+        </label>
+        <label>
+          offset y
+          <span class="val" id="effectYVal">0</span>
+          <input id="effectY" type="range" min="-600" max="600" value="0" />
+        </label>
+        <label>
+          strength
+          <span class="val" id="effectStrengthVal">280</span>
+          <input id="effectStrength" type="range" min="20" max="900" value="280" />
+        </label>
+        <label>
+          radius
+          <span class="val" id="effectRadiusVal">180</span>
+          <input id="effectRadius" type="range" min="40" max="1400" value="180" />
+        </label>
+        <p class="hint">
+          0,0 is the word center. Click the canvas to place the well. Radius
+          is how far it reaches.
+        </p>
+      </div>
+      <div id="effect-gravity" hidden>
+        <label>
+          gravity x
+          <span class="val" id="gravXVal">0</span>
+          <input id="gravX" type="range" min="-800" max="800" value="0" />
+        </label>
+        <label>
+          gravity y
+          <span class="val" id="gravYVal">420</span>
+          <input id="gravY" type="range" min="0" max="900" value="420" />
+        </label>
       </div>
 
       <label>
@@ -148,6 +234,6 @@
       <p id="status">no samples yet</p>
     </aside>
     <canvas id="stage"></canvas>
-    <script type="module" src="/src/demo/main.ts"></script>
+    <script type="module" src="./src/demo/main.ts"></script>
   </body>
 </html>

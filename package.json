@@ -44,6 +44,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:examples": "vite build --config vite.examples.config.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

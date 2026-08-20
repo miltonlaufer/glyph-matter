@@ -180,17 +180,45 @@ label.check input {
 }
 
 #morph-panel,
-#field-panel,
-#morph-grid-options {
+#field-panel {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
 }
 
 #morph-panel[hidden],
-#field-panel[hidden],
-#morph-grid-options[hidden],
-#ca-rule-row[hidden] {
+#field-panel[hidden] {
+  display: none;
+}
+
+.word-row-inner {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.word-row-inner input {
+  flex: 1;
+  min-width: 0;
+}
+
+.word-remove {
+  flex: 0 0 auto;
+  cursor: pointer;
+  padding: 0.35rem 0.55rem;
+}
+
+#loopWords,
+#effect-wind,
+#effect-point,
+#effect-gravity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+#effect-wind[hidden],
+#effect-point[hidden],
+#effect-gravity[hidden] {
   display: none;
 }
 
@@ -200,4 +228,22 @@ canvas {
   height: 100%;
   cursor: crosshair;
   background: var(--bg);
+}
+
+.caption {
+  position: fixed;
+  top: 12px;
+  left: calc(280px + 16px);
+  z-index: 2;
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: var(--text);
+}
+
+.caption a {
+  color: inherit;
+}
+
+.caption [aria-current="page"] {
+  font-weight: 600;
 }

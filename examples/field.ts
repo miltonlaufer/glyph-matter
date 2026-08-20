@@ -3,14 +3,17 @@
  * click to scatter.
  */
 import { GlyphMatter, World, drawParticles, makeView, screenToWorld } from "../src/lib/index.ts";
-import { FONT_URL, loop, sizeCanvas } from "./shared.ts";
+import { mountSiteNav } from "./nav.ts";
+import { FONT_URL, SAMPLE, loop, sizeCanvas } from "./shared.ts";
+
+mountSiteNav();
 
 const canvas = document.querySelector("canvas");
 if (!canvas) throw new Error("examples/field.html is missing <canvas>");
 const ctx = canvas.getContext("2d");
 if (!ctx) throw new Error("2d context unavailable");
 
-const matter = new GlyphMatter({ samplingMode: "both", fontSize: 140, fillSpacing: 5 });
+const matter = new GlyphMatter(SAMPLE);
 const world = new World().configure({ legibility: 0.85, gas: 40 });
 
 await matter.sampleFromFont(FONT_URL, "glyph");

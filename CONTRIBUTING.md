@@ -13,7 +13,14 @@ npm run dev
 ```
 
 The workbench is at `http://localhost:5173/`. Examples live under
-`http://localhost:5173/examples/`.
+`http://localhost:5173/examples/`. A static copy of the examples (for
+https://www.miltonlaufer.com.ar/glyph-matter-examples) is built with:
+
+```bash
+npm run build:examples
+```
+
+Writes into `../glyph-matter-examples`.
 
 README stills and GIFs: with the workbench running, Chrome, and ffmpeg:
 

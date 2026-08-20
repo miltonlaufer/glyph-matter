@@ -1,16 +1,20 @@
+import { mountSiteNav } from "../../examples/nav.ts";
 import {
-  Automata,
-  DifferentialGrowth,
   GlyphMatter,
+  Sequence,
   World,
   createTestFont,
-  drawAutomata,
   drawParticles,
-  drawRings,
   makeView,
   screenToWorld,
 } from "../lib/index.ts";
-import type { AutomataRule, SamplePack, SamplingMode, View } from "../lib/index.ts";
+import type {
+  InBetween,
+  ParticleEffect,
+  SamplePack,
+  SamplingMode,
+  View,
+} from "../lib/index.ts";
 
 function must<T>(value: T | null, name: string): T {
   if (!value) throw new Error(`Demo DOM is missing ${name}`);
@@ -24,6 +28,8 @@ function debounce(fn: () => void, ms: number): () => void {
     handle = window.setTimeout(fn, ms);
   };
 }
+
+mountSiteNav();
 
 const canvas = must(document.querySelector<HTMLCanvasElement>("#stage"), "stage");
 const themeToggle = must(
@@ -58,23 +64,54 @@ const animationSelect = must(
   "animation",
 );
 const morphPanel = must(document.querySelector<HTMLElement>("#morph-panel"), "morph-panel");
-const morphToInput = must(document.querySelector<HTMLInputElement>("#morphTo"), "morphTo");
+const loopWordsEl = must(document.querySelector<HTMLElement>("#loopWords"), "loopWords");
+const addWordBtn = must(document.querySelector<HTMLButtonElement>("#addWord"), "addWord");
 const morphBtn = must(document.querySelector<HTMLButtonElement>("#morph"), "morph");
 const morphLoop = must(document.querySelector<HTMLInputElement>("#morphLoop"), "morphLoop");
 const morphProcess = must(
   document.querySelector<HTMLSelectElement>("#morphProcess"),
   "morphProcess",
 );
-const morphGridOptions = must(
-  document.querySelector<HTMLElement>("#morph-grid-options"),
-  "morph-grid-options",
-);
-const caRuleRow = must(document.querySelector<HTMLElement>("#ca-rule-row"), "ca-rule-row");
 const fieldPanel = must(document.querySelector<HTMLElement>("#field-panel"), "field-panel");
-const caRule = must(document.querySelector<HTMLSelectElement>("#caRule"), "caRule");
-const caSpeed = must(document.querySelector<HTMLInputElement>("#caSpeed"), "caSpeed");
-const caSpeedVal = must(document.querySelector("#caSpeedVal"), "caSpeedVal");
+const effectKind = must(document.querySelector<HTMLSelectElement>("#effectKind"), "effectKind");
+const effectWind = must(document.querySelector<HTMLElement>("#effect-wind"), "effect-wind");
+const effectPoint = must(document.querySelector<HTMLElement>("#effect-point"), "effect-point");
+const effectGravity = must(
+  document.querySelector<HTMLElement>("#effect-gravity"),
+  "effect-gravity",
+);
+const windVx = must(document.querySelector<HTMLInputElement>("#windVx"), "windVx");
+const windVy = must(document.querySelector<HTMLInputElement>("#windVy"), "windVy");
+const windGust = must(document.querySelector<HTMLInputElement>("#windGust"), "windGust");
+const windVxVal = must(document.querySelector("#windVxVal"), "windVxVal");
+const windVyVal = must(document.querySelector("#windVyVal"), "windVyVal");
+const windGustVal = must(document.querySelector("#windGustVal"), "windGustVal");
+const windPeriod = must(document.querySelector<HTMLInputElement>("#windPeriod"), "windPeriod");
+const windWave = must(document.querySelector<HTMLInputElement>("#windWave"), "windWave");
+const windPeriodVal = must(document.querySelector("#windPeriodVal"), "windPeriodVal");
+const windWaveVal = must(document.querySelector("#windWaveVal"), "windWaveVal");
+const effectStrength = must(
+  document.querySelector<HTMLInputElement>("#effectStrength"),
+  "effectStrength",
+);
+const effectRadius = must(
+  document.querySelector<HTMLInputElement>("#effectRadius"),
+  "effectRadius",
+);
+const effectStrengthVal = must(document.querySelector("#effectStrengthVal"), "effectStrengthVal");
+const effectRadiusVal = must(document.querySelector("#effectRadiusVal"), "effectRadiusVal");
+const effectX = must(document.querySelector<HTMLInputElement>("#effectX"), "effectX");
+const effectY = must(document.querySelector<HTMLInputElement>("#effectY"), "effectY");
+const effectXVal = must(document.querySelector("#effectXVal"), "effectXVal");
+const effectYVal = must(document.querySelector("#effectYVal"), "effectYVal");
+const gravX = must(document.querySelector<HTMLInputElement>("#gravX"), "gravX");
+const gravY = must(document.querySelector<HTMLInputElement>("#gravY"), "gravY");
+const gravXVal = must(document.querySelector("#gravXVal"), "gravXVal");
+const gravYVal = must(document.querySelector("#gravYVal"), "gravYVal");
 const fontUrl = must(document.querySelector<HTMLInputElement>("#fontUrl"), "fontUrl");
+if (fontUrl.value === "/fonts/EBGaramond-Regular.ttf") {
+  fontUrl.value = `${import.meta.env.BASE_URL}fonts/EBGaramond-Regular.ttf`;
+}
 const fontFile = must(document.querySelector<HTMLInputElement>("#fontFile"), "fontFile");
 const statusEl = must(document.querySelector<HTMLParagraphElement>("#status"), "status");
 const sampleFontBtn = must(
@@ -97,48 +134,31 @@ const loadPackInput = must(
 
 const gm = new GlyphMatter();
 const world = new World();
-const automata = new Automata();
-const differential = new DifferentialGrowth();
 let sourceLabel = "none";
 let view: View | null = null;
-let morphPair: { a: SamplePack; b: SamplePack; toward: "a" | "b" } | null = null;
-let morphShow: {
-  phase: "dissolve" | "travel" | "form" | "hold" | "grid" | "diff";
-  elapsed: number;
-  restore: number;
-  holdFor: number;
-} | null = null;
+let sequence: Sequence | null = null;
 const packCache = new Map<string, SamplePack>();
 const ctx = must(canvas.getContext("2d"), "2d context");
-
-function ease(u: number): number {
-  const x = Math.min(1, Math.max(0, u));
-  return x * x * (3 - 2 * x);
-}
-
-function easeOut(u: number): number {
-  const x = Math.min(1, Math.max(0, u));
-  return 1 - (1 - x) ** 3;
-}
-
-const DISSOLVE_DROP_T = 0.28;
-const DISSOLVE_T = 0.75;
-const TRAVEL_T = 0.85;
-const FORM_T = 0.9;
-const HOLD_T = 0.65;
-const REST_T = 0.18;
-const DISSOLVE_FLOOR = 0.04;
-const DISSOLVE_LEGIBILITY = 0.3;
-const GRID_T = 2.35;
-const DIFF_T = 3.15;
-
-function dissolveLegibility(elapsed: number, restore: number): number {
-  const u = Math.min(1, elapsed / DISSOLVE_DROP_T);
-  return restore + (DISSOLVE_FLOOR - restore) * easeOut(u);
-}
+const HOLD_T = 0.85;
 
 function sliderLegibility(): number {
   return Number(legibility.value) / 100;
+}
+
+function sequenceDriving(): boolean {
+  return Boolean(sequence?.playing);
+}
+
+function loopWords(): string[] {
+  const first = textInput.value.trim();
+  const extras = [...loopWordsEl.querySelectorAll<HTMLInputElement>(".loop-word")]
+    .map((input) => input.value.trim())
+    .filter(Boolean);
+  return first ? [first, ...extras] : extras;
+}
+
+function morphInBetween(): InBetween {
+  return morphProcess.value === "spring" ? "spring" : "dissolve";
 }
 
 function applySettings(): void {
@@ -148,7 +168,6 @@ function applySettings(): void {
   const legibilityN = sliderLegibility();
   legibilityVal.textContent = legibilityN.toFixed(2);
   gasVal.textContent = gas.value;
-  caSpeedVal.textContent = caSpeed.value;
   gm.configure({
     samplingMode: modeSelect.value as SamplingMode,
     contourSpacing: Number(contourSpacing.value),
@@ -157,18 +176,110 @@ function applySettings(): void {
   });
   world.configure({
     gas: Number(gas.value),
-    ...(morphShow ? {} : { legibility: legibilityN }),
+    ...(sequenceDriving() && sequence?.phase !== "hold" ? {} : { legibility: legibilityN }),
   });
-  automata.configure({
-    rule: caRule.value as AutomataRule,
-    speed: Number(caSpeed.value),
-    kind: morphProcess.value === "growth" ? "growth" : "ca",
-  });
-  differential.configure({ speed: Number(caSpeed.value) });
+  if (sequence) sequence.restore = legibilityN;
+  syncEffectLabels();
+  applyEffectFromUi();
 }
 
 function setStatus(message: string): void {
   statusEl.textContent = message;
+}
+
+function effectAnchor(): { x: number; y: number } {
+  const pack = gm.getPack();
+  if (!pack) return { x: 0, y: 0 };
+  return {
+    x: pack.bounds.x + pack.bounds.w / 2,
+    y: pack.bounds.y + pack.bounds.h / 2,
+  };
+}
+
+function pointWell(): { x: number; y: number } {
+  const at = effectAnchor();
+  return {
+    x: at.x + Number(effectX.value),
+    y: at.y + Number(effectY.value),
+  };
+}
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n));
+}
+
+function placeWellAt(worldX: number, worldY: number): void {
+  const at = effectAnchor();
+  const min = Number(effectX.min);
+  const max = Number(effectX.max);
+  effectX.value = String(Math.round(clamp(worldX - at.x, min, max)));
+  effectY.value = String(Math.round(clamp(worldY - at.y, Number(effectY.min), Number(effectY.max))));
+  applySettings();
+}
+
+function syncEffectLabels(): void {
+  windVxVal.textContent = windVx.value;
+  windVyVal.textContent = windVy.value;
+  windGustVal.textContent = windGust.value;
+  windPeriodVal.textContent = (Number(windPeriod.value) / 10).toFixed(1);
+  windWaveVal.textContent = windWave.value;
+  effectXVal.textContent = effectX.value;
+  effectYVal.textContent = effectY.value;
+  effectStrengthVal.textContent = effectStrength.value;
+  effectRadiusVal.textContent = effectRadius.value;
+  gravXVal.textContent = gravX.value;
+  gravYVal.textContent = gravY.value;
+}
+
+function syncEffectPanels(): void {
+  const kind = effectKind.value;
+  effectWind.hidden = kind !== "wind";
+  effectPoint.hidden = kind !== "attract" && kind !== "repel" && kind !== "vortex";
+  effectGravity.hidden = kind !== "gravity";
+}
+
+function applyEffectFromUi(): void {
+  world.clearEffects();
+  const kind = effectKind.value;
+  if (kind === "none") return;
+  const at = pointWell();
+  const strength = Number(effectStrength.value);
+  const radius = Number(effectRadius.value);
+  let effect: ParticleEffect | null = null;
+  if (kind === "wind") {
+    effect = {
+      kind: "wind",
+      vx: Number(windVx.value),
+      vy: Number(windVy.value),
+      gust: Number(windGust.value),
+      period: Number(windPeriod.value) / 10,
+      wavelength: Number(windWave.value),
+    };
+  } else if (kind === "attract") {
+    effect = { kind: "attract", x: at.x, y: at.y, strength, radius };
+  } else if (kind === "repel") {
+    effect = { kind: "repel", x: at.x, y: at.y, strength, radius };
+  } else if (kind === "vortex") {
+    effect = { kind: "vortex", x: at.x, y: at.y, strength, radius };
+  } else if (kind === "gravity") {
+    effect = { kind: "gravity", x: Number(gravX.value), y: Number(gravY.value) };
+  }
+  if (effect) world.addEffect(effect);
+}
+
+function originXForView(): number {
+  const words = loopWords();
+  if (sequenceDriving() && words[0] && gm.hasFont()) {
+    try {
+      const pack = packFor(words[0]);
+      return pack.bounds.x + pack.bounds.w / 2;
+    } catch {
+      /* fall through */
+    }
+  }
+  const pack = gm.getPack();
+  const bounds = world.particles.length > 0 ? world.homeBounds() : pack?.bounds;
+  return bounds ? bounds.x + bounds.w / 2 : 0;
 }
 
 function syncCanvas(): void {
@@ -180,52 +291,19 @@ function syncCanvas(): void {
   if (canvas.height !== h) canvas.height = h;
   const pack = gm.getPack();
   const bounds = world.particles.length > 0 ? world.homeBounds() : pack?.bounds;
-  const originX = morphPair
-    ? morphPair.a.bounds.x + morphPair.a.bounds.w / 2
-    : bounds
-      ? bounds.x + bounds.w / 2
-      : 0;
-  const viewBounds =
-    morphPair && (morphShow?.phase === "grid" || morphShow?.phase === "diff")
-      ? paddedUnion(morphPair.a.bounds, morphPair.b.bounds, world.fontSize * 0.4)
-      : bounds;
-  view = viewBounds
-    ? makeView(viewBounds, canvas.width, canvas.height, {
+  view = bounds
+    ? makeView(bounds, canvas.width, canvas.height, {
         fit: "actual",
         dpr,
         baseline: 0,
         em: world.fontSize,
-        originX,
+        originX: originXForView(),
       })
     : null;
 }
 
 function animationKind(): "field" | "morph" {
   return animationSelect.value === "morph" ? "morph" : "field";
-}
-
-function paddedUnion(
-  a: { x: number; y: number; w: number; h: number },
-  b: { x: number; y: number; w: number; h: number },
-  pad: number,
-) {
-  const x = Math.min(a.x, b.x) - pad;
-  const y = Math.min(a.y, b.y) - pad;
-  const r = Math.max(a.x + a.w, b.x + b.w) + pad;
-  const t = Math.max(a.y + a.h, b.y + b.h) + pad;
-  return { x, y, w: r - x, h: t - y };
-}
-
-function morphInBetween(): "spring" | "dissolve" | "automata" | "growth" | "differential" {
-  const v = morphProcess.value;
-  if (v === "dissolve" || v === "automata" || v === "growth" || v === "differential") {
-    return v;
-  }
-  return "spring";
-}
-
-function gridMorphActive(): boolean {
-  return morphShow?.phase === "grid";
 }
 
 function cssVar(name: string, fallback: string): string {
@@ -237,7 +315,6 @@ function inkColors() {
   return {
     contour: cssVar("--ink", "#1c1b18"),
     fill: cssVar("--ink-soft", "#4a4740"),
-    dying: cssVar("--ink-dying", "#8a857c"),
   };
 }
 
@@ -269,17 +346,6 @@ function paint(): void {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     return;
   }
-  if (morphShow?.phase === "diff" && !differential.empty) {
-    drawRings(ctx, differential.rings, view, { color: ink.contour });
-    return;
-  }
-  if (gridMorphActive() && !automata.empty) {
-    drawAutomata(ctx, automata, view, {
-      liveColor: ink.contour,
-      dyingColor: ink.dying,
-    });
-    return;
-  }
   const pack = gm.getPack();
   drawParticles(ctx, world.particles, view, {
     pointRadius: (pack?.sampling.mode === "fill" ? 1.35 : 1.1) * view.dpr,
@@ -288,13 +354,19 @@ function paint(): void {
   });
 }
 
+function stopSequence(): void {
+  sequence?.pause();
+  sequence = null;
+  world.configure({ legibility: sliderLegibility() });
+}
+
 function afterSample(origin: string): void {
   sourceLabel = origin;
-  morphPair = null;
-  morphShow = null;
+  stopSequence();
   packCache.clear();
   const pack = gm.getPack();
   if (pack) world.load(pack);
+  applyEffectFromUi();
   const n = pack?.points.length ?? 0;
   const glyphs = pack?.glyphs.length ?? 0;
   const sampled = pack?.text ?? "";
@@ -333,73 +405,7 @@ function packFor(text: string): SamplePack {
 
 function warmMorphPacks(): void {
   if (!gm.hasFont()) return;
-  const fromText = textInput.value;
-  const toText = morphToInput.value;
-  if (fromText) packFor(fromText);
-  if (toText) packFor(toText);
-}
-
-function applyMorph(pair: { a: SamplePack; b: SamplePack; toward: "a" | "b" }): void {
-  const pack = pair.toward === "b" ? pair.b : pair.a;
-  world.morphTo(pack, "origin");
-  setStatus(`morph → “${pack.text}” · ${world.particles.length} points`);
-}
-
-function targetPack(pair: { a: SamplePack; b: SamplePack; toward: "a" | "b" }): SamplePack {
-  return pair.toward === "b" ? pair.b : pair.a;
-}
-
-function beginDissolve(restore: number): void {
-  const kick = 0.12;
-  morphShow = {
-    phase: "dissolve",
-    elapsed: kick,
-    restore,
-    holdFor: REST_T,
-  };
-  world.configure({ legibility: dissolveLegibility(kick, restore) });
-  world.reclaim();
-  world.scatter(95);
-  setStatus("dissolving…");
-}
-
-function beginGridMorph(restore: number): void {
-  if (!morphPair) return;
-  const from = morphPair.toward === "b" ? morphPair.a : morphPair.b;
-  const to = targetPack(morphPair);
-  applySettings();
-  automata.configure({
-    kind: morphInBetween() === "growth" ? "growth" : "ca",
-    rule: caRule.value as AutomataRule,
-    speed: Number(caSpeed.value),
-  });
-  automata.seedMorph(from, to);
-  applyMorph(morphPair);
-  morphShow = {
-    phase: "grid",
-    elapsed: 0,
-    restore,
-    holdFor: REST_T,
-  };
-  const label = morphInBetween() === "growth" ? "growing" : automata.rule;
-  setStatus(`${label} → “${to.text}”`);
-}
-
-function beginDiffMorph(restore: number): void {
-  if (!morphPair) return;
-  const from = morphPair.toward === "b" ? morphPair.a : morphPair.b;
-  const to = targetPack(morphPair);
-  applySettings();
-  differential.configure({ speed: Number(caSpeed.value) });
-  differential.seedMorph(from, to);
-  applyMorph(morphPair);
-  morphShow = {
-    phase: "diff",
-    elapsed: 0,
-    restore,
-    holdFor: REST_T,
-  };
-  setStatus(`differential growth → “${to.text}” · ${differential.nodeCount()} nodes`);
+  for (const word of loopWords()) packFor(word);
 }
 
 function startMorph(): void {
@@ -408,154 +414,75 @@ function startMorph(): void {
     return;
   }
   applySettings();
-  const fromText = textInput.value;
-  const toText = morphToInput.value;
-  if (!toText) {
-    setStatus("set a word to morph to");
+  const words = loopWords();
+  if (words.length < 2) {
+    setStatus("add at least two words to the loop");
     return;
   }
-  const a = packFor(fromText);
-  const b = packFor(toText);
-  morphPair = { a, b, toward: "b" };
+  const travel = morphInBetween();
   const restore = sliderLegibility();
-  const process = morphInBetween();
-  if (process === "dissolve") {
-    beginDissolve(restore);
-  } else if (process === "automata" || process === "growth") {
-    beginGridMorph(restore);
-  } else if (process === "differential") {
-    beginDiffMorph(restore);
-  } else {
-    applyMorph(morphPair);
-    morphShow = {
-      phase: "hold",
-      elapsed: 0,
-      restore,
-      holdFor: HOLD_T,
-    };
-  }
-}
-
-function syncGridOptions(): void {
-  const process = morphInBetween();
-  const grid =
-    process === "automata" || process === "growth" || process === "differential";
-  morphGridOptions.hidden = !grid;
-  caRuleRow.hidden = process !== "automata";
+  stopSequence();
+  sequence = new Sequence(gm, world, { loop: morphLoop.checked })
+    .addAnimationSteps(
+      words.map((word) => ({
+        word,
+        duration: HOLD_T,
+        inBetween: travel,
+        gas: Number(gas.value),
+        legibility: restore,
+      })),
+    )
+    .play();
+  applyEffectFromUi();
+  setStatus(`loop · ${words.join(" → ")}`);
 }
 
 function syncAnimationPanel(): void {
   const kind = animationKind();
   fieldPanel.hidden = kind !== "field";
   morphPanel.hidden = kind !== "morph";
-  syncGridOptions();
   if (kind !== "morph") {
-    morphPair = null;
-    morphShow = null;
-    automata.clear();
-    differential.clear();
-    world.configure({ legibility: sliderLegibility() });
+    stopSequence();
   } else {
     warmMorphPacks();
   }
 }
 
-function stepMorphShow(dt: number): void {
-  if (!morphShow || !morphPair) return;
-  morphShow.elapsed += dt;
-  const { restore } = morphShow;
+function bindWordRow(row: HTMLElement): void {
+  const input = row.querySelector<HTMLInputElement>(".loop-word");
+  const remove = row.querySelector<HTMLButtonElement>(".word-remove");
+  input?.addEventListener("input", debounce(warmMorphPacks, 80));
+  input?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") startMorph();
+  });
+  remove?.addEventListener("click", () => {
+    const rows = loopWordsEl.querySelectorAll(".word-row");
+    if (rows.length <= 1) return;
+    row.remove();
+  });
+}
 
-  if (morphShow.phase === "diff") {
-    const u = Math.min(1, morphShow.elapsed / DIFF_T);
-    differential.setProgress(u);
-    differential.tick(dt);
-    if (u >= 1) {
-      world.home();
-      world.configure({ legibility: restore });
-      morphShow.phase = "hold";
-      morphShow.elapsed = 0;
-      morphShow.holdFor = REST_T;
-      const pack = targetPack(morphPair);
-      setStatus(`“${pack.text}” · ${world.particles.length} points`);
-      differential.clear();
-    }
-    return;
-  }
-
-  if (morphShow.phase === "grid") {
-    const u = Math.min(1, morphShow.elapsed / GRID_T);
-    automata.setProgress(u);
-    automata.tick(dt);
-    if (u >= 1) {
-      automata.fillTarget();
-      world.home();
-      world.configure({ legibility: restore });
-      morphShow.phase = "hold";
-      morphShow.elapsed = 0;
-      morphShow.holdFor = REST_T;
-      const pack = targetPack(morphPair);
-      setStatus(`“${pack.text}” · ${world.particles.length} points`);
-      automata.clear();
-    }
-    return;
-  }
-
-  if (morphShow.phase === "dissolve") {
-    world.configure({
-      legibility: dissolveLegibility(morphShow.elapsed, restore),
-    });
-    if (morphShow.elapsed >= DISSOLVE_T) {
-      applyMorph(morphPair);
-      morphShow.phase = "travel";
-      morphShow.elapsed = 0;
-    }
-    return;
-  }
-
-  if (morphShow.phase === "travel") {
-    world.configure({ legibility: DISSOLVE_LEGIBILITY });
-    if (morphShow.elapsed >= TRAVEL_T) {
-      morphShow.phase = "form";
-      morphShow.elapsed = 0;
-      const pack = targetPack(morphPair);
-      setStatus(`forming “${pack.text}” · ${world.particles.length} points`);
-    }
-    return;
-  }
-
-  if (morphShow.phase === "form") {
-    const u = Math.min(1, morphShow.elapsed / FORM_T);
-    world.configure({
-      legibility: DISSOLVE_LEGIBILITY + (restore - DISSOLVE_LEGIBILITY) * ease(u),
-    });
-    if (u >= 1) {
-      morphShow.phase = "hold";
-      morphShow.elapsed = 0;
-      morphShow.holdFor = REST_T;
-      world.configure({ legibility: restore });
-      const pack = targetPack(morphPair);
-      setStatus(`“${pack.text}” · ${world.particles.length} points`);
-    }
-    return;
-  }
-
-  world.configure({ legibility: restore });
-  if (morphLoop.checked && morphShow.elapsed >= morphShow.holdFor) {
-    morphPair.toward = morphPair.toward === "b" ? "a" : "b";
-    const process = morphInBetween();
-    if (process === "dissolve") {
-      beginDissolve(restore);
-    } else if (process === "automata" || process === "growth") {
-      beginGridMorph(restore);
-    } else if (process === "differential") {
-      beginDiffMorph(restore);
-    } else {
-      applyMorph(morphPair);
-      morphShow.elapsed = 0;
-    }
-    return;
-  }
-  if (!morphLoop.checked) morphShow = null;
+function addWordRow(value = ""): void {
+  const label = document.createElement("label");
+  label.className = "word-row";
+  const caption = document.createElement("span");
+  caption.textContent = "then";
+  const inner = document.createElement("span");
+  inner.className = "word-row-inner";
+  const input = document.createElement("input");
+  input.className = "loop-word";
+  input.type = "text";
+  input.spellcheck = false;
+  input.value = value;
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "word-remove";
+  remove.setAttribute("aria-label", "remove word");
+  remove.textContent = "×";
+  inner.append(input, remove);
+  label.append(caption, inner);
+  loopWordsEl.append(label);
+  bindWordRow(label);
 }
 
 function resampleLoadedFont(): void {
@@ -624,20 +551,37 @@ homeBtn.addEventListener("click", () => {
 morphBtn.addEventListener("click", () => {
   startMorph();
 });
+addWordBtn.addEventListener("click", () => {
+  addWordRow("");
+});
 animationSelect.addEventListener("change", syncAnimationPanel);
 morphLoop.addEventListener("change", () => {
-  if (morphLoop.checked && !morphPair) startMorph();
+  if (sequence) sequence.loop = morphLoop.checked;
+  if (morphLoop.checked && !sequenceDriving()) startMorph();
 });
-morphToInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") startMorph();
-});
-morphToInput.addEventListener("input", debounce(warmMorphPacks, 80));
 morphProcess.addEventListener("change", () => {
-  applySettings();
-  syncGridOptions();
+  if (sequenceDriving()) startMorph();
 });
-caRule.addEventListener("change", applySettings);
-caSpeed.addEventListener("input", applySettings);
+effectKind.addEventListener("change", () => {
+  syncEffectPanels();
+  applyEffectFromUi();
+});
+
+for (const el of [
+  windVx,
+  windVy,
+  windGust,
+  windPeriod,
+  windWave,
+  effectX,
+  effectY,
+  effectStrength,
+  effectRadius,
+  gravX,
+  gravY,
+]) {
+  el.addEventListener("input", applySettings);
+}
 
 exportJsonBtn.addEventListener("click", () => {
   try {
@@ -688,30 +632,21 @@ for (const el of [legibility, gas]) {
   el.addEventListener("input", applySettings);
 }
 
-function pointerPaint(event: PointerEvent): void {
-  const pos = pointerWorld(event);
-  if (!pos) return;
-  if (gridMorphActive()) {
-    if (event.buttons !== 0) automata.paint(pos.x, pos.y, automata.cell * 2.2);
-    return;
-  }
-  world.pointer = { ...pos, down: event.buttons !== 0 };
-}
-
 canvas.addEventListener("pointermove", (event) => {
-  pointerPaint(event);
+  const pos = pointerWorld(event);
+  if (pos) world.pointer = { ...pos, down: event.buttons !== 0 };
 });
 canvas.addEventListener("pointerdown", (event) => {
   canvas.setPointerCapture(event.pointerId);
-  pointerPaint(event);
-  if (!gridMorphActive()) {
-    const pos = pointerWorld(event);
-    if (!pos) return;
-    world.pointer = { ...pos, down: true };
+  const pos = pointerWorld(event);
+  if (!pos) return;
+  const kind = effectKind.value;
+  if (kind === "attract" || kind === "repel" || kind === "vortex") {
+    placeWellAt(pos.x, pos.y);
   }
+  world.pointer = { ...pos, down: true };
 });
 canvas.addEventListener("pointerup", (event) => {
-  if (gridMorphActive()) return;
   const pos = pointerWorld(event);
   world.pointer = pos ? { ...pos, down: false } : null;
 });
@@ -725,13 +660,18 @@ let last = performance.now();
 function tick(now: number): void {
   const dt = Math.min((now - last) / 1000, 1 / 30);
   last = now;
-  stepMorphShow(dt);
-  if (!gridMorphActive()) world.step(dt);
+  if (sequenceDriving()) sequence?.tick(dt);
+  else world.step(dt);
   paint();
   requestAnimationFrame(tick);
 }
 
+for (const row of loopWordsEl.querySelectorAll<HTMLElement>(".word-row")) {
+  bindWordRow(row);
+}
+
 applyTheme(storedTheme());
+syncEffectPanels();
 applySettings();
 syncAnimationPanel();
 void sampleFromUrl();

@@ -19,6 +19,10 @@ body {
   color: inherit;
 }
 
+.caption [aria-current="page"] {
+  font-weight: 600;
+}
+
 canvas {
   display: block;
   width: 100%;

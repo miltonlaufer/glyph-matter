@@ -7,7 +7,10 @@
  * vanishing and new ones popping in.
  */
 import { GlyphMatter, World, drawParticles, makeView } from "../src/lib/index.ts";
-import { FONT_URL, loop, sizeCanvas, unionBounds } from "./shared.ts";
+import { mountSiteNav } from "./nav.ts";
+import { FONT_URL, SAMPLE, loop, sizeCanvas, unionBounds } from "./shared.ts";
+
+mountSiteNav();
 
 const canvas = document.querySelector("canvas");
 if (!canvas) throw new Error("examples/in-between.html is missing <canvas>");
@@ -38,7 +41,7 @@ function dissolveLegibility(elapsed: number): number {
   return REST + (FLOOR - REST) * easeOut(u);
 }
 
-const matter = new GlyphMatter({ samplingMode: "both", fontSize: 140, fillSpacing: 5 });
+const matter = new GlyphMatter(SAMPLE);
 await matter.sampleFromFont(FONT_URL, "glyph");
 const from = matter.getPack();
 if (!from) throw new Error("sampling failed");
