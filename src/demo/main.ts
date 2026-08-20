@@ -1,12 +1,16 @@
 import {
+  Automata,
+  DifferentialGrowth,
   GlyphMatter,
   World,
   createTestFont,
+  drawAutomata,
   drawParticles,
+  drawRings,
   makeView,
   screenToWorld,
 } from "../lib/index.ts";
-import type { SamplePack, SamplingMode, View } from "../lib/index.ts";
+import type { AutomataRule, SamplePack, SamplingMode, View } from "../lib/index.ts";
 
 function must<T>(value: T | null, name: string): T {
   if (!value) throw new Error(`Demo DOM is missing ${name}`);
@@ -53,10 +57,19 @@ const morphPanel = must(document.querySelector<HTMLElement>("#morph-panel"), "mo
 const morphToInput = must(document.querySelector<HTMLInputElement>("#morphTo"), "morphTo");
 const morphBtn = must(document.querySelector<HTMLButtonElement>("#morph"), "morph");
 const morphLoop = must(document.querySelector<HTMLInputElement>("#morphLoop"), "morphLoop");
-const morphDissolve = must(
-  document.querySelector<HTMLInputElement>("#morphDissolve"),
-  "morphDissolve",
+const morphProcess = must(
+  document.querySelector<HTMLSelectElement>("#morphProcess"),
+  "morphProcess",
 );
+const morphGridOptions = must(
+  document.querySelector<HTMLElement>("#morph-grid-options"),
+  "morph-grid-options",
+);
+const caRuleRow = must(document.querySelector<HTMLElement>("#ca-rule-row"), "ca-rule-row");
+const fieldPanel = must(document.querySelector<HTMLElement>("#field-panel"), "field-panel");
+const caRule = must(document.querySelector<HTMLSelectElement>("#caRule"), "caRule");
+const caSpeed = must(document.querySelector<HTMLInputElement>("#caSpeed"), "caSpeed");
+const caSpeedVal = must(document.querySelector("#caSpeedVal"), "caSpeedVal");
 const fontUrl = must(document.querySelector<HTMLInputElement>("#fontUrl"), "fontUrl");
 const fontFile = must(document.querySelector<HTMLInputElement>("#fontFile"), "fontFile");
 const statusEl = must(document.querySelector<HTMLParagraphElement>("#status"), "status");
@@ -80,11 +93,13 @@ const loadPackInput = must(
 
 const gm = new GlyphMatter();
 const world = new World();
+const automata = new Automata();
+const differential = new DifferentialGrowth();
 let sourceLabel = "none";
 let view: View | null = null;
 let morphPair: { a: SamplePack; b: SamplePack; toward: "a" | "b" } | null = null;
 let morphShow: {
-  phase: "dissolve" | "travel" | "form" | "hold";
+  phase: "dissolve" | "travel" | "form" | "hold" | "grid" | "diff";
   elapsed: number;
   restore: number;
   holdFor: number;
@@ -110,6 +125,8 @@ const HOLD_T = 0.65;
 const REST_T = 0.18;
 const DISSOLVE_FLOOR = 0.04;
 const DISSOLVE_LEGIBILITY = 0.3;
+const GRID_T = 2.35;
+const DIFF_T = 3.15;
 
 function dissolveLegibility(elapsed: number, restore: number): number {
   const u = Math.min(1, elapsed / DISSOLVE_DROP_T);
@@ -127,6 +144,7 @@ function applySettings(): void {
   const legibilityN = sliderLegibility();
   legibilityVal.textContent = legibilityN.toFixed(2);
   gasVal.textContent = gas.value;
+  caSpeedVal.textContent = caSpeed.value;
   gm.configure({
     samplingMode: modeSelect.value as SamplingMode,
     contourSpacing: Number(contourSpacing.value),
@@ -137,6 +155,12 @@ function applySettings(): void {
     gas: Number(gas.value),
     ...(morphShow ? {} : { legibility: legibilityN }),
   });
+  automata.configure({
+    rule: caRule.value as AutomataRule,
+    speed: Number(caSpeed.value),
+    kind: morphProcess.value === "growth" ? "growth" : "ca",
+  });
+  differential.configure({ speed: Number(caSpeed.value) });
 }
 
 function setStatus(message: string): void {
@@ -157,8 +181,12 @@ function syncCanvas(): void {
     : bounds
       ? bounds.x + bounds.w / 2
       : 0;
-  view = bounds
-    ? makeView(bounds, canvas.width, canvas.height, {
+  const viewBounds =
+    morphPair && (morphShow?.phase === "grid" || morphShow?.phase === "diff")
+      ? paddedUnion(morphPair.a.bounds, morphPair.b.bounds, world.fontSize * 0.4)
+      : bounds;
+  view = viewBounds
+    ? makeView(viewBounds, canvas.width, canvas.height, {
         fit: "actual",
         dpr,
         baseline: 0,
@@ -168,10 +196,46 @@ function syncCanvas(): void {
     : null;
 }
 
+function animationKind(): "field" | "morph" {
+  return animationSelect.value === "morph" ? "morph" : "field";
+}
+
+function paddedUnion(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+  pad: number,
+) {
+  const x = Math.min(a.x, b.x) - pad;
+  const y = Math.min(a.y, b.y) - pad;
+  const r = Math.max(a.x + a.w, b.x + b.w) + pad;
+  const t = Math.max(a.y + a.h, b.y + b.h) + pad;
+  return { x, y, w: r - x, h: t - y };
+}
+
+function morphInBetween(): "spring" | "dissolve" | "automata" | "growth" | "differential" {
+  const v = morphProcess.value;
+  if (v === "dissolve" || v === "automata" || v === "growth" || v === "differential") {
+    return v;
+  }
+  return "spring";
+}
+
+function gridMorphActive(): boolean {
+  return morphShow?.phase === "grid";
+}
+
 function paint(): void {
   syncCanvas();
   if (!view) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+  if (morphShow?.phase === "diff" && !differential.empty) {
+    drawRings(ctx, differential.rings, view);
+    return;
+  }
+  if (gridMorphActive() && !automata.empty) {
+    drawAutomata(ctx, automata, view);
     return;
   }
   const pack = gm.getPack();
@@ -254,6 +318,45 @@ function beginDissolve(restore: number): void {
   setStatus("dissolving…");
 }
 
+function beginGridMorph(restore: number): void {
+  if (!morphPair) return;
+  const from = morphPair.toward === "b" ? morphPair.a : morphPair.b;
+  const to = targetPack(morphPair);
+  applySettings();
+  automata.configure({
+    kind: morphInBetween() === "growth" ? "growth" : "ca",
+    rule: caRule.value as AutomataRule,
+    speed: Number(caSpeed.value),
+  });
+  automata.seedMorph(from, to);
+  applyMorph(morphPair);
+  morphShow = {
+    phase: "grid",
+    elapsed: 0,
+    restore,
+    holdFor: REST_T,
+  };
+  const label = morphInBetween() === "growth" ? "growing" : automata.rule;
+  setStatus(`${label} → “${to.text}”`);
+}
+
+function beginDiffMorph(restore: number): void {
+  if (!morphPair) return;
+  const from = morphPair.toward === "b" ? morphPair.a : morphPair.b;
+  const to = targetPack(morphPair);
+  applySettings();
+  differential.configure({ speed: Number(caSpeed.value) });
+  differential.seedMorph(from, to);
+  applyMorph(morphPair);
+  morphShow = {
+    phase: "diff",
+    elapsed: 0,
+    restore,
+    holdFor: REST_T,
+  };
+  setStatus(`differential growth → “${to.text}” · ${differential.nodeCount()} nodes`);
+}
+
 function startMorph(): void {
   if (!gm.hasFont()) {
     setStatus("need a live font to morph");
@@ -270,8 +373,13 @@ function startMorph(): void {
   const b = packFor(toText);
   morphPair = { a, b, toward: "b" };
   const restore = sliderLegibility();
-  if (morphDissolve.checked) {
+  const process = morphInBetween();
+  if (process === "dissolve") {
     beginDissolve(restore);
+  } else if (process === "automata" || process === "growth") {
+    beginGridMorph(restore);
+  } else if (process === "differential") {
+    beginDiffMorph(restore);
   } else {
     applyMorph(morphPair);
     morphShow = {
@@ -283,11 +391,24 @@ function startMorph(): void {
   }
 }
 
+function syncGridOptions(): void {
+  const process = morphInBetween();
+  const grid =
+    process === "automata" || process === "growth" || process === "differential";
+  morphGridOptions.hidden = !grid;
+  caRuleRow.hidden = process !== "automata";
+}
+
 function syncAnimationPanel(): void {
-  morphPanel.hidden = animationSelect.value !== "morph";
-  if (animationSelect.value !== "morph") {
+  const kind = animationKind();
+  fieldPanel.hidden = kind !== "field";
+  morphPanel.hidden = kind !== "morph";
+  syncGridOptions();
+  if (kind !== "morph") {
     morphPair = null;
     morphShow = null;
+    automata.clear();
+    differential.clear();
     world.configure({ legibility: sliderLegibility() });
   } else {
     warmMorphPacks();
@@ -298,6 +419,41 @@ function stepMorphShow(dt: number): void {
   if (!morphShow || !morphPair) return;
   morphShow.elapsed += dt;
   const { restore } = morphShow;
+
+  if (morphShow.phase === "diff") {
+    const u = Math.min(1, morphShow.elapsed / DIFF_T);
+    differential.setProgress(u);
+    differential.tick(dt);
+    if (u >= 1) {
+      world.home();
+      world.configure({ legibility: restore });
+      morphShow.phase = "hold";
+      morphShow.elapsed = 0;
+      morphShow.holdFor = REST_T;
+      const pack = targetPack(morphPair);
+      setStatus(`“${pack.text}” · ${world.particles.length} points`);
+      differential.clear();
+    }
+    return;
+  }
+
+  if (morphShow.phase === "grid") {
+    const u = Math.min(1, morphShow.elapsed / GRID_T);
+    automata.setProgress(u);
+    automata.tick(dt);
+    if (u >= 1) {
+      automata.fillTarget();
+      world.home();
+      world.configure({ legibility: restore });
+      morphShow.phase = "hold";
+      morphShow.elapsed = 0;
+      morphShow.holdFor = REST_T;
+      const pack = targetPack(morphPair);
+      setStatus(`“${pack.text}” · ${world.particles.length} points`);
+      automata.clear();
+    }
+    return;
+  }
 
   if (morphShow.phase === "dissolve") {
     world.configure({
@@ -341,8 +497,13 @@ function stepMorphShow(dt: number): void {
   world.configure({ legibility: restore });
   if (morphLoop.checked && morphShow.elapsed >= morphShow.holdFor) {
     morphPair.toward = morphPair.toward === "b" ? "a" : "b";
-    if (morphDissolve.checked) {
+    const process = morphInBetween();
+    if (process === "dissolve") {
       beginDissolve(restore);
+    } else if (process === "automata" || process === "growth") {
+      beginGridMorph(restore);
+    } else if (process === "differential") {
+      beginDiffMorph(restore);
     } else {
       applyMorph(morphPair);
       morphShow.elapsed = 0;
@@ -422,6 +583,12 @@ morphToInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") startMorph();
 });
 morphToInput.addEventListener("input", debounce(warmMorphPacks, 80));
+morphProcess.addEventListener("change", () => {
+  applySettings();
+  syncGridOptions();
+});
+caRule.addEventListener("change", applySettings);
+caSpeed.addEventListener("input", applySettings);
 
 exportJsonBtn.addEventListener("click", () => {
   try {
@@ -472,18 +639,30 @@ for (const el of [legibility, gas]) {
   el.addEventListener("input", applySettings);
 }
 
-canvas.addEventListener("pointermove", (event) => {
+function pointerPaint(event: PointerEvent): void {
   const pos = pointerWorld(event);
   if (!pos) return;
+  if (gridMorphActive()) {
+    if (event.buttons !== 0) automata.paint(pos.x, pos.y, automata.cell * 2.2);
+    return;
+  }
   world.pointer = { ...pos, down: event.buttons !== 0 };
+}
+
+canvas.addEventListener("pointermove", (event) => {
+  pointerPaint(event);
 });
 canvas.addEventListener("pointerdown", (event) => {
   canvas.setPointerCapture(event.pointerId);
-  const pos = pointerWorld(event);
-  if (!pos) return;
-  world.pointer = { ...pos, down: true };
+  pointerPaint(event);
+  if (!gridMorphActive()) {
+    const pos = pointerWorld(event);
+    if (!pos) return;
+    world.pointer = { ...pos, down: true };
+  }
 });
 canvas.addEventListener("pointerup", (event) => {
+  if (gridMorphActive()) return;
   const pos = pointerWorld(event);
   world.pointer = pos ? { ...pos, down: false } : null;
 });
@@ -498,7 +677,7 @@ function tick(now: number): void {
   const dt = Math.min((now - last) / 1000, 1 / 30);
   last = now;
   stepMorphShow(dt);
-  world.step(dt);
+  if (!gridMorphActive()) world.step(dt);
   paint();
   requestAnimationFrame(tick);
 }

@@ -126,13 +126,18 @@ label.check input {
   width: auto;
 }
 
-#morph-panel {
+#morph-panel,
+#field-panel,
+#morph-grid-options {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
 }
 
-#morph-panel[hidden] {
+#morph-panel[hidden],
+#field-panel[hidden],
+#morph-grid-options[hidden],
+#ca-rule-row[hidden] {
   display: none;
 }
 

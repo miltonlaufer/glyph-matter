@@ -108,6 +108,85 @@ export function drawParticles(
   ctx.globalAlpha = 1;
 }
 
+export type AutomataGrid = {
+  cols: number;
+  rows: number;
+  cell: number;
+  originX: number;
+  originY: number;
+  cells: Uint8Array;
+};
+
+export function drawAutomata(
+  ctx: CanvasRenderingContext2D,
+  grid: AutomataGrid,
+  view: View,
+  options: { liveColor?: string; dyingColor?: string; clear?: boolean } = {},
+): void {
+  const { width, height } = ctx.canvas;
+  if (options.clear !== false) ctx.clearRect(0, 0, width, height);
+  const live = options.liveColor ?? "#f2efe9";
+  const dying = options.dyingColor ?? "#6a665e";
+  const radius = Math.max(0.85, 1.15 * view.dpr);
+  const n = grid.cols * grid.rows;
+  for (let i = 0; i < n; i++) {
+    const s = grid.cells[i] ?? 0;
+    if (s === 0) continue;
+    const col = i % grid.cols;
+    const row = (i / grid.cols) | 0;
+    ctx.fillStyle = s === 2 ? dying : live;
+    ctx.beginPath();
+    ctx.arc(
+      view.ox + (grid.originX + (col + 0.5) * grid.cell) * view.scale,
+      view.oy + (grid.originY + (row + 0.5) * grid.cell) * view.scale,
+      radius,
+      0,
+      Math.PI * 2,
+    );
+    ctx.fill();
+  }
+}
+
+export function drawRings(
+  ctx: CanvasRenderingContext2D,
+  rings: Array<Array<{ x: number; y: number }>>,
+  view: View,
+  options: { color?: string; clear?: boolean; lineWidth?: number } = {},
+): void {
+  const { width, height } = ctx.canvas;
+  if (options.clear !== false) ctx.clearRect(0, 0, width, height);
+  const color = options.color ?? "#f2efe9";
+  const line = options.lineWidth ?? Math.max(1.1, view.dpr * 1.15);
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.lineWidth = line;
+  ctx.globalAlpha = 1;
+  for (const ring of rings) {
+    if (ring.length < 2) continue;
+    const first = ring[0];
+    if (!first) continue;
+    ctx.beginPath();
+    ctx.moveTo(view.ox + first.x * view.scale, view.oy + first.y * view.scale);
+    for (let i = 1; i < ring.length; i++) {
+      const p = ring[i];
+      if (!p) continue;
+      ctx.lineTo(view.ox + p.x * view.scale, view.oy + p.y * view.scale);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+  const r = Math.max(0.9, line * 0.45);
+  for (const ring of rings) {
+    for (const p of ring) {
+      ctx.beginPath();
+      ctx.arc(view.ox + p.x * view.scale, view.oy + p.y * view.scale, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
 export function drawSamples(
   ctx: CanvasRenderingContext2D,
   pack: SamplePack,
