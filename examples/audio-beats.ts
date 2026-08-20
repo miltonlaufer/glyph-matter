@@ -160,11 +160,11 @@ loop((dt) => {
     analyser.getByteFrequencyData(bins);
     const binHz = analyser.context.sampleRate / analyser.fftSize;
     if (primed) {
-      const kickHit = pickOnset(bandFlux(bins, prev, binHz, 40, 110), kickPick, clock, {
-        refractory: 0.2,
-        k: 2.05,
-        floor: 0.045,
-        history: 40,
+      const kickHit = pickOnset(bandFlux(bins, prev, binHz, 35, 140), kickPick, clock, {
+        refractory: 0.14,
+        k: 1.55,
+        floor: 0.02,
+        history: 28,
       });
       const snareHit = pickOnset(bandFlux(bins, prev, binHz, 150, 400), snarePick, clock, {
         refractory: 0.11,
