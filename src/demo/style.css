@@ -248,6 +248,18 @@ canvas {
   font-weight: 600;
 }
 
+.caption-github {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: -0.2em;
+}
+
+.caption-github svg {
+  display: block;
+  width: 1.1em;
+  height: 1.1em;
+}
+
 #menuToggle,
 #menuScrim {
   display: none;
