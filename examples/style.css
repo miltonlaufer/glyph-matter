@@ -48,22 +48,71 @@ canvas {
   display: none;
 }
 
-.stop {
+.transport {
   position: fixed;
   left: 50%;
   bottom: 28px;
   z-index: 2;
   transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  max-width: calc(100% - 24px);
+}
+
+.transport[hidden] {
+  display: none;
+}
+
+.stop,
+.lowpass {
   margin: 0;
   border: 1px solid #2a2926;
   border-radius: 999px;
-  padding: 0.7rem 1.6rem;
   background: #f4f1eaee;
   color: inherit;
   font: 600 18px/1.2 system-ui, sans-serif;
   cursor: pointer;
 }
 
-.stop[hidden] {
-  display: none;
+.stop {
+  padding: 0.7rem 1.6rem;
+}
+
+.lowpass {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.15rem;
+  user-select: none;
+}
+
+.lowpass input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: #2a2926;
+}
+
+.cutoff {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid #2a2926;
+  border-radius: 999px;
+  background: #f4f1eaee;
+  font: 600 16px/1.2 system-ui, sans-serif;
+  user-select: none;
+}
+
+.cutoff input[type="range"] {
+  width: 140px;
+  accent-color: #2a2926;
+}
+
+.cutoff:has(input:disabled) {
+  opacity: 0.45;
 }

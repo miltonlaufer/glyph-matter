@@ -8,7 +8,17 @@
   </head>
   <body>
     <nav class="caption" aria-label="Examples"></nav>
-    <aside>
+    <button
+      id="menuToggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="workbench"
+      aria-label="open menu"
+    >
+      <span class="menu-toggle-bars" aria-hidden="true"></span>
+    </button>
+    <div id="menuScrim"></div>
+    <aside id="workbench">
       <div class="title-row">
         <h1>glyph-matter</h1>
         <button id="themeToggle" type="button" aria-pressed="false">dark</button>

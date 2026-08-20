@@ -32,6 +32,11 @@ function debounce(fn: () => void, ms: number): () => void {
 mountSiteNav();
 
 const canvas = must(document.querySelector<HTMLCanvasElement>("#stage"), "stage");
+const menuToggle = must(
+  document.querySelector<HTMLButtonElement>("#menuToggle"),
+  "menuToggle",
+);
+const menuScrim = must(document.querySelector("#menuScrim"), "menuScrim");
 const themeToggle = must(
   document.querySelector<HTMLButtonElement>("#themeToggle"),
   "themeToggle",
@@ -683,6 +688,23 @@ canvas.addEventListener("pointerup", (event) => {
 });
 canvas.addEventListener("pointerleave", () => {
   world.pointer = null;
+});
+
+function setMenuOpen(open: boolean): void {
+  document.body.classList.toggle("menu-open", open);
+  menuToggle.setAttribute("aria-expanded", String(open));
+  menuToggle.setAttribute("aria-label", open ? "close menu" : "open menu");
+}
+
+menuToggle.addEventListener("click", () => {
+  setMenuOpen(!document.body.classList.contains("menu-open"));
+});
+menuScrim.addEventListener("click", () => setMenuOpen(false));
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") setMenuOpen(false);
+});
+window.matchMedia("(max-width: 800px)").addEventListener("change", (event) => {
+  if (!event.matches) setMenuOpen(false);
 });
 
 window.addEventListener("resize", syncCanvas);

@@ -247,3 +247,105 @@ canvas {
 .caption [aria-current="page"] {
   font-weight: 600;
 }
+
+#menuToggle,
+#menuScrim {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  body {
+    grid-template-columns: 1fr;
+  }
+
+  #menuToggle {
+    display: grid;
+    place-items: center;
+    position: fixed;
+    top: 8px;
+    left: 10px;
+    z-index: 6;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .menu-toggle-bars,
+  .menu-toggle-bars::before,
+  .menu-toggle-bars::after {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: var(--text);
+    border-radius: 1px;
+    position: relative;
+  }
+
+  .menu-toggle-bars::before,
+  .menu-toggle-bars::after {
+    content: "";
+    position: absolute;
+    left: 0;
+  }
+
+  .menu-toggle-bars::before {
+    top: -6px;
+  }
+
+  .menu-toggle-bars::after {
+    top: 6px;
+  }
+
+  body.menu-open .menu-toggle-bars {
+    background: transparent;
+  }
+
+  body.menu-open .menu-toggle-bars::before {
+    top: 0;
+    transform: rotate(45deg);
+  }
+
+  body.menu-open .menu-toggle-bars::after {
+    top: 0;
+    transform: rotate(-45deg);
+  }
+
+  .caption {
+    left: 56px;
+    right: 12px;
+    top: 16px;
+  }
+
+  aside {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(280px, 92vw);
+    z-index: 5;
+    padding-top: 3.4rem;
+    border-right: 1px solid var(--stroke);
+    box-shadow: 8px 0 28px #0003;
+  }
+
+  body.menu-open aside {
+    display: flex;
+  }
+
+  #menuScrim {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    margin: 0;
+    border: 0;
+    padding: 0;
+    background: #1c1b1844;
+  }
+
+  body.menu-open #menuScrim {
+    display: block;
+  }
+}
