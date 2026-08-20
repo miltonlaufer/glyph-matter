@@ -569,8 +569,9 @@ function matchClosest(current: Morphable[], dest: SamplePoint[]): MatchResult {
  * Shared letters keep their ink. Different-length words line up on
  * the middle: `the` sits still and becomes `riz` while `ho` and `on`
  * grow on the sides. Extra letters of a longer word fly into every
- * letter of the shorter one, then fade in place. New letters bud
- * from the closest existing letter.
+ * letter of the shorter one, then die on arrival. Spare points inside
+ * a matched letter do the same instead of vanishing in place. New
+ * letters bud from the closest existing letter.
  */
 export function morphParticles(
   current: Morphable[],
@@ -591,22 +592,17 @@ export function morphParticles(
   if (dest.length === 0) return [];
   if (current.length === 0) return dest.map((p) => spawn(p, 1));
 
-  const fading: Morphable[] = [];
-  const living: Morphable[] = [];
-  for (const p of current) {
-    if (p.exit) fading.push(p);
-    else living.push(p);
-  }
-
+  const living = current.map((p) => (p.exit ? { ...p, exit: false } : p));
+  const next: Morphable[] = [];
+  const spare: Morphable[] = [];
   const take = (result: MatchResult) => {
     append(next, result.live);
-    for (const p of result.unused) fading.push(fadeOut(p));
+    append(spare, result.unused);
   };
 
-  const next: Morphable[] = [];
   if (currentGlyphs.length === 0 || targetGlyphs.length === 0) {
     take(matchClosest(living, dest));
-    append(next, fading);
+    append(next, sendEvenToLetters(spare, orderedGroups(groupByGlyph(dest))));
     return next;
   }
 
@@ -632,11 +628,10 @@ export function morphParticles(
     if (!usedDst.has(g)) append(leftoverDst, pts);
   }
 
-  append(next, sendEvenToLetters(leftoverSrc, orderedGroups(dstGroups)));
   append(
     next,
-    emitFromClosestLetters(leftoverDst, srcGroups),
+    sendEvenToLetters(leftoverSrc.concat(spare), orderedGroups(dstGroups)),
   );
-  append(next, fading);
+  append(next, emitFromClosestLetters(leftoverDst, srcGroups));
   return next;
 }

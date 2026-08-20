@@ -104,6 +104,18 @@ export class World {
     return this;
   }
 
+  /**
+   * Extra ink is still matter: it can rematch on the next morph
+   * instead of dying in the dissolving cloud.
+   */
+  reclaim(): this {
+    for (const p of this.particles) {
+      p.exit = false;
+      p.life = 1;
+    }
+    return this;
+  }
+
   scatter(strength = 420): this {
     for (const p of this.particles) {
       if (p.exit) continue;

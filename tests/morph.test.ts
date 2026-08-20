@@ -185,6 +185,44 @@ describe("morphParticles closest assignment", () => {
     expect(extras.some((p) => p.x >= 50)).toBe(true);
   });
 
+  it("sends spare points of a matched letter into dest letters instead of dropping them", () => {
+    const fromG = { i: 0, ch: "m", x: 0, y: 0, advance: 10, word: 0 };
+    const toG = { i: 0, ch: "m", x: 0, y: 0, advance: 10, word: 0 };
+    const current = [particle(0, 0), particle(1, 0), particle(2, 0)].map((p) => ({
+      ...p,
+      g: 0,
+    }));
+    const targets = [{ x: 0, y: 0, g: 0, k: "contour" as const }];
+    const out = morphParticles(current, targets, "origin", [fromG], [toG]);
+    expect(out).toHaveLength(3);
+    const extras = out.filter((p) => p.exit);
+    expect(extras).toHaveLength(2);
+    expect(extras.every((p) => p.homeX === 0 && p.homeY === 0)).toBe(true);
+    expect(extras.some((p) => p.x !== 0)).toBe(true);
+  });
+
+  it("rematches leftover exit ink on the next morph", () => {
+    const glyph = { i: 0, ch: "x", x: 0, y: 0, advance: 10, word: 0 };
+    const leftover: Morphable = {
+      ...particle(40, 0),
+      g: 0,
+      exit: true,
+      homeX: 0,
+      homeY: 0,
+    };
+    const out = morphParticles(
+      [leftover],
+      [{ x: 8, y: 0, g: 0, k: "contour" as const }],
+      "origin",
+      [glyph],
+      [glyph],
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]?.exit).toBe(false);
+    expect(out[0]?.homeX).toBe(8);
+    expect(out[0]?.x).toBe(40);
+  });
+
   it("keeps the shorter word in the middle: the becomes riz, ho/on appear on the sides", () => {
     const charsFrom = [..."the"];
     const charsTo = [..."horizon"];

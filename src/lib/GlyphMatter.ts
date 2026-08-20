@@ -52,18 +52,26 @@ export class GlyphMatter {
   }
 
   /**
-   * Sample again from the font last passed to `sampleFromFont`.
-   * Pass `text` to change the string without reloading the font.
+   * Sample `text` from the loaded font without replacing the current pack.
    * Throws if the current samples came from a pack and no font is loaded.
    */
-  resample(text?: string): this {
+  samplePack(text: string): SamplePack {
     if (!this.font) {
       throw new Error(
         "No font loaded. Call sampleFromFont() for live sampling, or loadSamples() for a shipped pack.",
       );
     }
+    return sampleText(this.font, text, this.snapshotOptions());
+  }
+
+  /**
+   * Sample again from the font last passed to `sampleFromFont`.
+   * Pass `text` to change the string without reloading the font.
+   * Throws if the current samples came from a pack and no font is loaded.
+   */
+  resample(text?: string): this {
     if (text !== undefined) this.text = text;
-    this.pack = sampleText(this.font, this.text, this.snapshotOptions());
+    this.pack = this.samplePack(this.text);
     return this;
   }
 

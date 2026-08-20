@@ -84,6 +84,21 @@ describe("GlyphMatter live sampling", () => {
     expect(gm.exportSamples().glyphs.map((g) => g.ch).join("")).toBe("O");
   });
 
+  it("samplePack leaves the current text and pack alone", async () => {
+    const gm = new GlyphMatter({
+      samplingMode: "contour",
+      contourSpacing: 12,
+      fontSize: 80,
+    });
+    await gm.sampleFromFont(font, "I");
+    const before = gm.exportSamples();
+    const other = gm.samplePack("O");
+    expect(other.glyphs.map((g) => g.ch).join("")).toBe("O");
+    expect(gm.getText()).toBe("I");
+    expect(gm.exportSamples().glyphs.map((g) => g.ch).join("")).toBe("I");
+    expect(gm.exportSamples().points).toHaveLength(before.points.length);
+  });
+
   it("scales sampled bounds when fontSize changes", async () => {
     const gm = new GlyphMatter({
       samplingMode: "contour",

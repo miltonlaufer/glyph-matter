@@ -91,6 +91,41 @@ describe("World", () => {
     expect(world.particles).toHaveLength(0);
   });
 
+  it("reclaim keeps extras in the cloud instead of dropping them at home", () => {
+    const p = {
+      x: 10,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      homeX: 10,
+      homeY: 0,
+      g: 0,
+      k: "contour" as const,
+      life: 1,
+      exit: true as const,
+    };
+    const world = new World().configure({ gas: 0 }).load({
+      v: 1,
+      text: "x",
+      sampling: {
+        mode: "contour",
+        contourSpacing: 10,
+        fillSpacing: 10,
+        fontSize: 80,
+        fillRule: "nonzero",
+      },
+      font: { familyName: "t", unitsPerEm: 1000 },
+      bounds: { x: 0, y: 0, w: 10, h: 10 },
+      glyphs: [{ i: 0, ch: "x", x: 0, y: 0, advance: 10, word: 0 }],
+      points: [{ x: 10, y: 0, g: 0, k: "contour" }],
+    });
+    world.particles = [p];
+    world.reclaim();
+    world.step(1 / 60);
+    expect(world.particles).toHaveLength(1);
+    expect(world.particles[0]?.exit).toBe(false);
+  });
+
   it("drops faded spare points so morph loops stay bounded", async () => {
     const from = await packFor("I");
     const to = await packFor("O");

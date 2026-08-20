@@ -87,12 +87,33 @@ let morphShow: {
   phase: "dissolve" | "travel" | "form" | "hold";
   elapsed: number;
   restore: number;
+  holdFor: number;
 } | null = null;
+const packCache = new Map<string, SamplePack>();
 const ctx = must(canvas.getContext("2d"), "2d context");
 
 function ease(u: number): number {
   const x = Math.min(1, Math.max(0, u));
   return x * x * (3 - 2 * x);
+}
+
+function easeOut(u: number): number {
+  const x = Math.min(1, Math.max(0, u));
+  return 1 - (1 - x) ** 3;
+}
+
+const DISSOLVE_DROP_T = 0.28;
+const DISSOLVE_T = 0.75;
+const TRAVEL_T = 0.85;
+const FORM_T = 0.9;
+const HOLD_T = 0.65;
+const REST_T = 0.18;
+const DISSOLVE_FLOOR = 0.04;
+const DISSOLVE_LEGIBILITY = 0.3;
+
+function dissolveLegibility(elapsed: number, restore: number): number {
+  const u = Math.min(1, elapsed / DISSOLVE_DROP_T);
+  return restore + (DISSOLVE_FLOOR - restore) * easeOut(u);
 }
 
 function sliderLegibility(): number {
@@ -163,23 +184,74 @@ function afterSample(origin: string): void {
   sourceLabel = origin;
   morphPair = null;
   morphShow = null;
+  packCache.clear();
   const pack = gm.getPack();
   if (pack) world.load(pack);
   const n = pack?.points.length ?? 0;
   const glyphs = pack?.glyphs.length ?? 0;
   const sampled = pack?.text ?? "";
   setStatus(`${origin} · “${sampled}” · ${glyphs} glyphs · ${n} points`);
+  requestAnimationFrame(() => warmMorphPacks());
 }
 
-function sampleCurrentWord(text: string): SamplePack {
-  gm.resample(text);
-  return gm.exportSamples();
+function packCacheKey(text: string): string {
+  return [
+    text,
+    modeSelect.value,
+    contourSpacing.value,
+    fillSpacing.value,
+    fontSize.value,
+  ].join("\0");
+}
+
+function packFor(text: string): SamplePack {
+  const key = packCacheKey(text);
+  const hit = packCache.get(key);
+  if (hit) return hit;
+  const current = gm.getPack();
+  const pack =
+    current &&
+    current.text === text &&
+    current.sampling.mode === modeSelect.value &&
+    current.sampling.contourSpacing === Number(contourSpacing.value) &&
+    current.sampling.fillSpacing === Number(fillSpacing.value) &&
+    current.sampling.fontSize === Number(fontSize.value)
+      ? gm.exportSamples()
+      : gm.samplePack(text);
+  packCache.set(key, pack);
+  return pack;
+}
+
+function warmMorphPacks(): void {
+  if (!gm.hasFont()) return;
+  const fromText = textInput.value;
+  const toText = morphToInput.value;
+  if (fromText) packFor(fromText);
+  if (toText) packFor(toText);
 }
 
 function applyMorph(pair: { a: SamplePack; b: SamplePack; toward: "a" | "b" }): void {
   const pack = pair.toward === "b" ? pair.b : pair.a;
   world.morphTo(pack, "origin");
   setStatus(`morph → “${pack.text}” · ${world.particles.length} points`);
+}
+
+function targetPack(pair: { a: SamplePack; b: SamplePack; toward: "a" | "b" }): SamplePack {
+  return pair.toward === "b" ? pair.b : pair.a;
+}
+
+function beginDissolve(restore: number): void {
+  const kick = 0.12;
+  morphShow = {
+    phase: "dissolve",
+    elapsed: kick,
+    restore,
+    holdFor: REST_T,
+  };
+  world.configure({ legibility: dissolveLegibility(kick, restore) });
+  world.reclaim();
+  world.scatter(95);
+  setStatus("dissolving…");
 }
 
 function startMorph(): void {
@@ -194,22 +266,19 @@ function startMorph(): void {
     setStatus("set a word to morph to");
     return;
   }
-  const a = sampleCurrentWord(fromText);
-  const b = sampleCurrentWord(toText);
+  const a = packFor(fromText);
+  const b = packFor(toText);
   morphPair = { a, b, toward: "b" };
+  const restore = sliderLegibility();
   if (morphDissolve.checked) {
-    morphShow = {
-      phase: "dissolve",
-      elapsed: 0,
-      restore: sliderLegibility(),
-    };
-    setStatus("dissolving…");
+    beginDissolve(restore);
   } else {
     applyMorph(morphPair);
     morphShow = {
       phase: "hold",
       elapsed: 0,
-      restore: sliderLegibility(),
+      restore,
+      holdFor: HOLD_T,
     };
   }
 }
@@ -220,14 +289,10 @@ function syncAnimationPanel(): void {
     morphPair = null;
     morphShow = null;
     world.configure({ legibility: sliderLegibility() });
+  } else {
+    warmMorphPacks();
   }
 }
-
-const DISSOLVE_T = 0.55;
-const TRAVEL_T = 0.85;
-const FORM_T = 0.9;
-const HOLD_T = 0.65;
-const DISSOLVE_LEGIBILITY = 0.3;
 
 function stepMorphShow(dt: number): void {
   if (!morphShow || !morphPair) return;
@@ -235,11 +300,10 @@ function stepMorphShow(dt: number): void {
   const { restore } = morphShow;
 
   if (morphShow.phase === "dissolve") {
-    const u = Math.min(1, morphShow.elapsed / DISSOLVE_T);
     world.configure({
-      legibility: restore + (DISSOLVE_LEGIBILITY - restore) * ease(u),
+      legibility: dissolveLegibility(morphShow.elapsed, restore),
     });
-    if (u >= 1) {
+    if (morphShow.elapsed >= DISSOLVE_T) {
       applyMorph(morphPair);
       morphShow.phase = "travel";
       morphShow.elapsed = 0;
@@ -252,6 +316,8 @@ function stepMorphShow(dt: number): void {
     if (morphShow.elapsed >= TRAVEL_T) {
       morphShow.phase = "form";
       morphShow.elapsed = 0;
+      const pack = targetPack(morphPair);
+      setStatus(`forming “${pack.text}” · ${world.particles.length} points`);
     }
     return;
   }
@@ -264,18 +330,19 @@ function stepMorphShow(dt: number): void {
     if (u >= 1) {
       morphShow.phase = "hold";
       morphShow.elapsed = 0;
+      morphShow.holdFor = REST_T;
       world.configure({ legibility: restore });
+      const pack = targetPack(morphPair);
+      setStatus(`“${pack.text}” · ${world.particles.length} points`);
     }
     return;
   }
 
   world.configure({ legibility: restore });
-  if (morphLoop.checked && morphShow.elapsed >= HOLD_T) {
+  if (morphLoop.checked && morphShow.elapsed >= morphShow.holdFor) {
     morphPair.toward = morphPair.toward === "b" ? "a" : "b";
     if (morphDissolve.checked) {
-      morphShow.phase = "dissolve";
-      morphShow.elapsed = 0;
-      setStatus("dissolving…");
+      beginDissolve(restore);
     } else {
       applyMorph(morphPair);
       morphShow.elapsed = 0;
@@ -287,6 +354,7 @@ function stepMorphShow(dt: number): void {
 
 function resampleLoadedFont(): void {
   applySettings();
+  packCache.clear();
   if (!gm.hasFont()) {
     if (gm.getPack()) {
       setStatus(`${sourceLabel} · pack is frozen; sample from a font to resample`);
@@ -353,6 +421,7 @@ morphLoop.addEventListener("change", () => {
 morphToInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") startMorph();
 });
+morphToInput.addEventListener("input", debounce(warmMorphPacks, 80));
 
 exportJsonBtn.addEventListener("click", () => {
   try {
@@ -426,7 +495,7 @@ window.addEventListener("resize", syncCanvas);
 
 let last = performance.now();
 function tick(now: number): void {
-  const dt = (now - last) / 1000;
+  const dt = Math.min((now - last) / 1000, 1 / 30);
   last = now;
   stepMorphShow(dt);
   world.step(dt);
