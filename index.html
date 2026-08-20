@@ -8,7 +8,10 @@
   </head>
   <body>
     <aside>
-      <h1>glyph-matter</h1>
+      <div class="title-row">
+        <h1>glyph-matter</h1>
+        <button id="themeToggle" type="button" aria-pressed="false">dark</button>
+      </div>
       <p class="lede">
         Live font sampling, or a shipped pack. Font size is the on-screen size
         of the letters. Legibility is how hard the points try to remain a word.
@@ -16,15 +19,15 @@
 
       <label>
         text
-        <input id="text" type="text" value="milton" spellcheck="false" />
+        <input id="text" type="text" value="glyph" spellcheck="false" />
       </label>
 
       <label>
         sampling mode
         <select id="mode">
-          <option value="contour" selected>contour</option>
+          <option value="contour">contour</option>
           <option value="fill">fill</option>
-          <option value="both">both</option>
+          <option value="both" selected>both</option>
         </select>
       </label>
 
@@ -35,8 +38,8 @@
       </label>
       <label>
         fill spacing
-        <span class="val" id="fillSpacingVal">8</span>
-        <input id="fillSpacing" type="range" min="3" max="28" value="8" />
+        <span class="val" id="fillSpacingVal">5</span>
+        <input id="fillSpacing" type="range" min="3" max="28" value="5" />
       </label>
       <label>
         font size
@@ -48,11 +51,11 @@
       <label>
         kind
         <select id="animation">
-          <option value="field" selected>field (scatter / gas / pointer)</option>
-          <option value="morph">word → word</option>
+          <option value="field">field (scatter / gas / pointer)</option>
+          <option value="morph" selected>word → word</option>
         </select>
       </label>
-      <div id="field-panel">
+      <div id="field-panel" hidden>
         <label>
           legibility
           <span class="val" id="legibilityVal">1.00</span>
@@ -70,7 +73,7 @@
         <p class="hint">Move the pointer over the letters. Hold to push harder.</p>
       </div>
 
-      <div id="morph-panel" hidden>
+      <div id="morph-panel">
         <label>
           morph to
           <input id="morphTo" type="text" value="matter" spellcheck="false" />
@@ -79,14 +82,14 @@
           <button id="morph" type="button">morph</button>
         </div>
         <label class="check">
-          <input id="morphLoop" type="checkbox" />
+          <input id="morphLoop" type="checkbox" checked />
           loop
         </label>
         <label>
           in-between
           <select id="morphProcess">
-            <option value="spring" selected>particles (spring)</option>
-            <option value="dissolve">dissolve (word → gas → word)</option>
+            <option value="spring">particles (spring)</option>
+            <option value="dissolve" selected>dissolve (word → gas → word)</option>
             <option value="automata">cellular automata</option>
             <option value="growth">organic growth (dilation)</option>
             <option value="differential">differential growth</option>

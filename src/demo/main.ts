@@ -26,6 +26,10 @@ function debounce(fn: () => void, ms: number): () => void {
 }
 
 const canvas = must(document.querySelector<HTMLCanvasElement>("#stage"), "stage");
+const themeToggle = must(
+  document.querySelector<HTMLButtonElement>("#themeToggle"),
+  "themeToggle",
+);
 const textInput = must(document.querySelector<HTMLInputElement>("#text"), "text");
 const modeSelect = must(document.querySelector<HTMLSelectElement>("#mode"), "mode");
 const contourSpacing = must(
@@ -224,23 +228,63 @@ function gridMorphActive(): boolean {
   return morphShow?.phase === "grid";
 }
 
+function cssVar(name: string, fallback: string): string {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+function inkColors() {
+  return {
+    contour: cssVar("--ink", "#1c1b18"),
+    fill: cssVar("--ink-soft", "#4a4740"),
+    dying: cssVar("--ink-dying", "#8a857c"),
+  };
+}
+
+function applyTheme(theme: "dark" | "light"): void {
+  document.documentElement.dataset.theme = theme;
+  themeToggle.textContent = theme === "dark" ? "light" : "dark";
+  themeToggle.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+  try {
+    localStorage.setItem("glyph-matter-theme", theme);
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+function storedTheme(): "dark" | "light" {
+  try {
+    const value = localStorage.getItem("glyph-matter-theme");
+    if (value === "light" || value === "dark") return value;
+  } catch {
+    /* ignore */
+  }
+  return "light";
+}
+
 function paint(): void {
   syncCanvas();
+  const ink = inkColors();
   if (!view) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     return;
   }
   if (morphShow?.phase === "diff" && !differential.empty) {
-    drawRings(ctx, differential.rings, view);
+    drawRings(ctx, differential.rings, view, { color: ink.contour });
     return;
   }
   if (gridMorphActive() && !automata.empty) {
-    drawAutomata(ctx, automata, view);
+    drawAutomata(ctx, automata, view, {
+      liveColor: ink.contour,
+      dyingColor: ink.dying,
+    });
     return;
   }
   const pack = gm.getPack();
   drawParticles(ctx, world.particles, view, {
     pointRadius: (pack?.sampling.mode === "fill" ? 1.35 : 1.1) * view.dpr,
+    contourColor: ink.contour,
+    fillColor: ink.fill,
   });
 }
 
@@ -256,6 +300,7 @@ function afterSample(origin: string): void {
   const sampled = pack?.text ?? "";
   setStatus(`${origin} · “${sampled}” · ${glyphs} glyphs · ${n} points`);
   requestAnimationFrame(() => warmMorphPacks());
+  if (animationKind() === "morph" && morphLoop.checked) startMorph();
 }
 
 function packCacheKey(text: string): string {
@@ -560,6 +605,10 @@ function pointerWorld(event: PointerEvent) {
   return screenToWorld(event.clientX - rect.left, event.clientY - rect.top, view);
 }
 
+themeToggle.addEventListener("click", () => {
+  const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+  applyTheme(next);
+});
 sampleFontBtn.addEventListener("click", () => {
   void sampleFromUrl();
 });
@@ -682,6 +731,7 @@ function tick(now: number): void {
   requestAnimationFrame(tick);
 }
 
+applyTheme(storedTheme());
 applySettings();
 syncAnimationPanel();
 void sampleFromUrl();
