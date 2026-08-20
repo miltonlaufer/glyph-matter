@@ -15,7 +15,8 @@ export type DrawSamplesOptions = {
   contourColor?: string;
   fillColor?: string;
   /**
-   * `actual`: 1 sampled unit = 1 CSS pixel (font size is on-screen size).
+   * `actual`: 1 sampled unit = 1 CSS pixel when it fits; shrinks to the
+   * canvas width/height so a word cannot overflow the device.
    * `contain`: scale the pack to fill the canvas.
    */
   fit?: DrawFit;
@@ -28,6 +29,8 @@ export type DrawSamplesOptions = {
   /** World x placed at the canvas center. Locks the camera while words morph. */
   originX?: number;
 };
+
+const VIEW_PAD = 96;
 
 /** Camera that maps world coordinates onto a canvas backing store. */
 export function makeView(
@@ -46,10 +49,11 @@ export function makeView(
   const fit = options.fit ?? "actual";
   const bw = Math.max(bounds.w, 1);
   const bh = Math.max(bounds.h, 1);
-  const scale =
-    fit === "contain"
-      ? Math.min((canvasWidth - 96) / bw, (canvasHeight - 96) / bh)
-      : dpr;
+  const contain = Math.min(
+    (canvasWidth - VIEW_PAD) / bw,
+    (canvasHeight - VIEW_PAD) / bh,
+  );
+  const scale = fit === "contain" ? contain : Math.min(dpr, contain);
   const cx = options.originX ?? bounds.x + bw / 2;
   const ox = canvasWidth / 2 - cx * scale;
   const em = options.em;

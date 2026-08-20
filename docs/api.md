@@ -24,6 +24,7 @@ import {
   sampleImageFromRgba,
   spectrumEnergy,
   spectrumCentroid,
+  bandEnergy,
   windFromSpectrum,
   windFromAnalyser,
   drawSamples,
@@ -208,8 +209,8 @@ Live point in `World`. Same fields as a sample plus velocity and fade:
 
 `"contain"` | `"actual"`
 
-- `"actual"` — 1 world unit = 1 device pixel (`scale === dpr`), so `fontSize`
-  is on-screen size.
+- `"actual"` — 1 world unit = 1 CSS pixel when the pack fits (`scale === dpr`);
+  shrinks if the word would be wider or taller than the canvas.
 - `"contain"` — scale the bounds to fill the canvas with padding.
 
 ### `View`
@@ -527,6 +528,8 @@ world.addEffect({ kind: "attract", x: 120, y: 40, strength: 160, radius: 500 });
 Map loudness (0–1) and spectral centroid (0–1, bass→treble) to traveling
 wind. `spectrumEnergy` / `spectrumCentroid` read an FFT buffer;
 `windFromAnalyser(analyser, bins)` does both for a Web Audio `AnalyserNode`.
+`bandEnergy(freq, binHz, loHz, hiHz)` is the same mean as `spectrumEnergy`
+but only for bins in that Hertz range (`binHz` is `sampleRate / fftSize`).
 
 `applyEffect(effect, particle, dt, time?)` is the same function `World.step` uses,
 exported for tests and custom integrators. `time` is seconds; wind uses it for

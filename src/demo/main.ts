@@ -708,6 +708,7 @@ window.matchMedia("(max-width: 800px)").addEventListener("change", (event) => {
 });
 
 window.addEventListener("resize", syncCanvas);
+window.visualViewport?.addEventListener("resize", syncCanvas);
 
 let last = performance.now();
 function tick(now: number): void {

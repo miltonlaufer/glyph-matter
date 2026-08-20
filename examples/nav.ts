@@ -9,6 +9,7 @@ const FILES = [
   { file: "sequence.html", label: "sequence" },
   { file: "image.html", label: "image" },
   { file: "audio.html", label: "audio" },
+  { file: "audio-bands.html", label: "audio-bands" },
 ] as const;
 
 function isDevRoot(): boolean {

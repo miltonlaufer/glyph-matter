@@ -23,6 +23,7 @@ npm run dev
 | Sequence — `addAnimationSteps` + wind / attract | http://localhost:5173/examples/sequence.html | [sequence](https://www.miltonlaufer.com.ar/glyph-matter-examples/sequence.html) |
 | Image — `glyph` → sunset → `matter` → book (Canny contours) | http://localhost:5173/examples/image.html | [image](https://www.miltonlaufer.com.ar/glyph-matter-examples/image.html) |
 | Audio — wind from *Terminal Hours* (stop, optional analyser lowpass) | http://localhost:5173/examples/audio.html | [audio](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio.html) |
+| Audio bands — treble wind, bass vortex | http://localhost:5173/examples/audio-bands.html | [audio-bands](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio-bands.html) |
 
 The font is the copy in `public/fonts/EBGaramond-Regular.ttf`. Point
 `FONT_URL` in `shared.ts` at another `.ttf` / `.otf` if you like.

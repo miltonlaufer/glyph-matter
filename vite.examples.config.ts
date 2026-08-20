@@ -64,6 +64,7 @@ export default defineConfig({
         sequence: resolve(root, "examples/sequence.html"),
         image: resolve(root, "examples/image.html"),
         audio: resolve(root, "examples/audio.html"),
+        "audio-bands": resolve(root, "examples/audio-bands.html"),
       },
     },
   },

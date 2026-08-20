@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { spectrumCentroid, spectrumEnergy, windFromSpectrum } from "../src/lib/audio.ts";
+import { spectrumCentroid, spectrumEnergy, bandEnergy, windFromSpectrum } from "../src/lib/audio.ts";
 
 describe("audio wind", () => {
   it("reads silence as no energy", () => {
@@ -25,5 +25,16 @@ describe("audio wind", () => {
     expect(loud.vx).toBeGreaterThan(quiet.vx);
     expect(loud.gust ?? 0).toBeGreaterThan(quiet.gust ?? 0);
     expect(loud.period ?? 1).toBeLessThan(quiet.period ?? 1);
+  });
+
+  it("isolates a low band from a high band", () => {
+    const freq = new Uint8Array(64);
+    freq[2] = 200;
+    freq[50] = 200;
+    const binHz = 20;
+    expect(bandEnergy(freq, binHz, 20, 80)).toBeGreaterThan(0.1);
+    expect(bandEnergy(freq, binHz, 900, 1400)).toBeGreaterThan(0.1);
+    expect(bandEnergy(freq, binHz, 20, 80)).not.toBe(bandEnergy(freq, binHz, 900, 1400));
+    expect(bandEnergy(freq, binHz, 2000, 4000)).toBe(0);
   });
 });

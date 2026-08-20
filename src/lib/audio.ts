@@ -8,6 +8,23 @@ export function spectrumEnergy(freq: ArrayLike<number>): number {
   return Math.min(1, (sum / (freq.length * 255)) * 5);
 }
 
+/** Mean energy in `[loHz, hiHz]`. `binHz` is `sampleRate / fftSize`. */
+export function bandEnergy(
+  freq: ArrayLike<number>,
+  binHz: number,
+  loHz: number,
+  hiHz: number,
+): number {
+  if (freq.length === 0 || binHz <= 0 || hiHz < loHz) return 0;
+  const i0 = Math.max(0, Math.floor(loHz / binHz));
+  const i1 = Math.min(freq.length - 1, Math.ceil(hiHz / binHz));
+  if (i1 < i0) return 0;
+  let sum = 0;
+  for (let i = i0; i <= i1; i++) sum += freq[i]!;
+  const n = i1 - i0 + 1;
+  return Math.min(1, (sum / (n * 255)) * 5);
+}
+
 /** Spectral centroid 0–1 (low = bass, high = treble). */
 export function spectrumCentroid(freq: ArrayLike<number>): number {
   let sum = 0;

@@ -20,7 +20,7 @@ export { Sequence } from "./sequence.ts";
 export type { AnimationStep, SequenceOptions, InBetween } from "./sequence.ts";
 export { sampleImage, sampleImageFromRgba, loadImagePixels } from "./image.ts";
 export type { ImageSampleOptions } from "./image.ts";
-export { spectrumEnergy, spectrumCentroid, windFromSpectrum, windFromAnalyser } from "./audio.ts";
+export { spectrumEnergy, spectrumCentroid, bandEnergy, windFromSpectrum, windFromAnalyser } from "./audio.ts";
 export { morphParticles } from "./morph.ts";
 export type { MorphAlign, Morphable } from "./morph.ts";
 export { Automata, stepAutomata, stepGrowth, bridgeMask } from "./automata.ts";
