@@ -25,8 +25,21 @@ import {
   spectrumEnergy,
   spectrumCentroid,
   bandEnergy,
+  bandFlux,
+  timeDomainEnergy,
+  dominantHz,
+  visualWavePeriod,
+  visualBeatPeriod,
+  lockWavePeriod,
+  WAVE_FALLBACK_PERIOD,
   windFromSpectrum,
   windFromAnalyser,
+  createOnsetPicker,
+  pickOnset,
+  createTempoFollow,
+  followTempo,
+  displayInk,
+  canvasDotRadius,
   drawSamples,
   drawParticles,
   drawAutomata,
@@ -222,7 +235,7 @@ Camera produced by `makeView`: `{ scale, ox, oy, dpr }`.
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `pointRadius` | `number` | Dot radius in canvas pixels |
+| `pointRadius` | `number` | Dot radius in **CSS pixels** (scaled by `view.dpr` onto the backing store) |
 | `contourColor` | `string` | Contour dots |
 | `fillColor` | `string` | Fill dots |
 | `fit` | `DrawFit` | Camera fit |
@@ -526,15 +539,27 @@ world.addEffect({ kind: "wind", vx: 80, vy: 0, gust: 30, period: 1.4, wavelength
 world.addEffect({ kind: "attract", x: 120, y: 40, strength: 160, radius: 500 });
 ```
 
-### `windFromSpectrum(energy, centroid): WindEffect`
+### `windFromSpectrum(energy, centroid, hz?): WindEffect`
 
-Map loudness (0–1) and spectral centroid (0–1, bass→treble) to traveling
-wind. `spectrumEnergy` / `spectrumCentroid` read an FFT buffer;
-`windFromAnalyser(analyser, bins)` does both for a Web Audio `AnalyserNode`
-(a file in `examples/audio.ts`, or a microphone in `examples/webcam.ts`;
-that sketch also draws a time-domain level meter in the page).
+Map loudness (0–1) and spectral centroid (0–1, bass→treble) to wind.
+Energy scales force. Pass `hz` to add a traveling gust whose **period is
+that frequency folded into view** (octaves share a pulse; 110 Hz and
+220 Hz feel the same rate). Omit `hz` for a lean with no wave.
+`dominantHz(freq, binHz)` is the peak in the bass/low-mid band;
+`visualWavePeriod(hz)` is the fold (`~0.5–2` s). `timeDomainEnergy` is
+RMS of a time-domain buffer. `windFromAnalyser(analyser, bins)` uses RMS
+for **how hard** the gust blows, and **locks** the traveling-wave period
+after a short arm (until silence) so the oscillator does not chase the
+beat (`lockWavePeriod`). File: `examples/audio.ts`; microphone:
+`examples/webcam.ts`. `examples/audio-bands.ts` keeps a **fixed**
+traveling-wave rate; treble scales that gust, bass drives a vortex.
 `bandEnergy(freq, binHz, loHz, hiHz)` is the same mean as `spectrumEnergy`
 but only for bins in that Hertz range (`binHz` is `sampleRate / fftSize`).
+`bandFlux(curr, prev, binHz, loHz, hiHz)` is half-wave spectral flux in
+that band (drum hits, not sustained notes). `pickOnset(flux, picker, time)`
+is an adaptive peak-picker with a refractory window. `followTempo`
+turns kick-to-kick gaps into the traveling-wind period (see
+`examples/audio-beats.ts`: kick punches the gust, bass drives the vortex).
 
 `applyEffect(effect, particle, dt, time?)` is the same function `World.step` uses,
 exported for tests and custom integrators. `time` is seconds; wind uses it for
@@ -782,7 +807,20 @@ Uses `view.dpr`.
 
 ### `drawParticles(ctx, points, view, options?): void`
 
-Dots for fill then contour. `life` becomes alpha.
+Dots for fill then contour. `life` becomes alpha. `pointRadius` is CSS
+pixels; the backing-store radius is `canvasDotRadius(pointRadius, view.dpr)`.
+
+### `displayInk(cssWidth, cssHeight, dpr, base): { contourSpacing, fillSpacing }`
+
+World-space spacings that keep ink density similar across CSS viewport
+size and device pixel ratio. Small screens tighten spacing; high DPR
+loosens it so 1-device-pixel dots do not pack into a solid. `base.refCss`
+is the shorter viewport side the base spacings were chosen for (default
+`680`). Use the result as `GlyphMatter` / `sampleImage` spacing.
+
+### `canvasDotRadius(cssRadius, dpr): number`
+
+Backing-store radius for a CSS-pixel dot.
 
 ### `drawAutomata(ctx, grid, view, options?): void`
 

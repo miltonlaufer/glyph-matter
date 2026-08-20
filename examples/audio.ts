@@ -77,12 +77,14 @@ function cutoffHz(): number {
 
 function applyCutoff(): void {
   const hz = cutoffHz();
-  if (cutoffVal) cutoffVal.textContent = `${hz} Hz`;
+  const on = Boolean(lowpassToggle?.checked);
+  if (cutoffVal) cutoffVal.textContent = on ? `${hz} Hz` : "off";
   if (lowpass) lowpass.frequency.value = hz;
 }
 
 function setLowpassEnabled(on: boolean): void {
   if (cutoffSlider) cutoffSlider.disabled = !on;
+  applyCutoff();
   wireAnalyser(on);
 }
 
@@ -112,10 +114,10 @@ async function start(): Promise<void> {
     applyCutoff();
     analyser = ctxAudio.createAnalyser();
     analyser.fftSize = 2048;
-    analyser.smoothingTimeConstant = 0.72;
+    analyser.smoothingTimeConstant = 0.35;
     bins = new Uint8Array(analyser.frequencyBinCount);
-    wireAnalyser(lowpassToggle?.checked ?? false);
   }
+  setLowpassEnabled(lowpassToggle?.checked ?? false);
   await audio.play();
   sequence.play();
   showPlaying(true);

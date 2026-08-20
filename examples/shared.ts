@@ -28,7 +28,7 @@ export function unionAll(boxes: Box[], pad = 0): Box {
 }
 
 export function sizeCanvas(canvas: HTMLCanvasElement): number {
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
   const cssW = Math.max(1, canvas.clientWidth);
   const cssH = Math.max(1, canvas.clientHeight);
   canvas.width = Math.round(cssW * dpr);

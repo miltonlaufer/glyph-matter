@@ -148,3 +148,38 @@ canvas {
   transform: scaleX(0);
   transform-origin: left center;
 }
+
+.readout {
+  display: grid;
+  gap: 0.32rem;
+  min-width: 240px;
+  margin: 0;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #2a2926;
+  border-radius: 16px;
+  background: #f4f1eaee;
+  font: 600 12px/1.2 ui-monospace, monospace;
+}
+
+.readout-row {
+  display: grid;
+  grid-template-columns: 3.6rem 4.6rem 1fr;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.readout-bar {
+  height: 0.42rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #2a292622;
+}
+
+.readout-bar > i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: #2a2926;
+  transform: scaleX(0);
+  transform-origin: left center;
+}

@@ -357,7 +357,7 @@ function paint(): void {
   }
   const pack = gm.getPack();
   drawParticles(ctx, world.particles, view, {
-    pointRadius: (pack?.sampling.mode === "fill" ? 1.35 : 1.1) * view.dpr,
+    pointRadius: pack?.sampling.mode === "fill" ? 1.35 : 1.1,
     contourColor: ink.contour,
     fillColor: ink.fill,
   });

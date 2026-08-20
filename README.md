@@ -174,6 +174,7 @@ Source for those pages is the workbench plus [`examples/`](examples/). After `np
 | Webcam — one still per camera step + mic | http://localhost:5173/examples/webcam.html | [webcam](https://www.miltonlaufer.com.ar/glyph-matter-examples/webcam.html) |
 | Audio wind | http://localhost:5173/examples/audio.html | [audio](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio.html) |
 | Audio bands (treble wind, bass vortex) | http://localhost:5173/examples/audio-bands.html | [audio-bands](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio-bands.html) |
+| Audio beats (kick gust, bass vortex) | http://localhost:5173/examples/audio-beats.html | [audio-beats](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio-beats.html) |
 
 Publish a fresh copy of the live folder with `npm run build:examples` (writes `../glyph-matter-examples`). Hosted at [miltonlaufer.com.ar/glyph-matter-examples](https://www.miltonlaufer.com.ar/glyph-matter-examples).
 
@@ -209,7 +210,9 @@ Publish a fresh copy of the live folder with `npm run build:examples` (writes `.
 
 **Audio** — `glyph` → `matter` → `dancing`, with wind from *Terminal Hours*. Click to start (browser autoplay); **stop** at the bottom. Optional **lowpass** is analyser-only (the mix stays dry); a log slider sets the cutoff (80 Hz–8 kHz).
 
-**Audio bands** — same track and words. Treble (2–8 kHz) drives wind; bass (20–280 Hz) drives a vortex below the word.
+**Audio bands** — same track and words. Treble (2–8 kHz) drives a fixed-rate traveling wind; bass (20–280 Hz) drives a vortex below the word.
+
+**Audio beats** — same loop. Kick **onsets** punch the traveling gust and set its period (gap between kicks). Bass energy (20–280 Hz) drives the vortex; hats/snares add to the gust.
 
 MP4 recordings of the sketches (except webcam, which needs a camera) live in [`docs/media/`](docs/media/). Audio examples include *Terminal Hours*. Regenerate with `npm run media:video` while the workbench is running.
 

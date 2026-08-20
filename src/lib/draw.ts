@@ -1,5 +1,6 @@
 import type { Bounds, SampleKind, SamplePack } from "./types.ts";
 import type { Vec } from "./types.ts";
+import { canvasDotRadius } from "./density.ts";
 
 export type DrawFit = "contain" | "actual";
 
@@ -11,6 +12,7 @@ export type View = {
 };
 
 export type DrawSamplesOptions = {
+  /** Dot radius in CSS pixels. Scaled by {@link View.dpr} onto the backing store. */
   pointRadius?: number;
   contourColor?: string;
   fillColor?: string;
@@ -87,7 +89,7 @@ export function drawParticles(
   options: DrawSamplesOptions = {},
 ): void {
   const { width, height } = ctx.canvas;
-  const radius = options.pointRadius ?? 1.2;
+  const radius = canvasDotRadius(options.pointRadius ?? 1.2, view.dpr);
   const contourColor = options.contourColor ?? "#f2efe9";
   const fillColor = options.fillColor ?? "#c8c2b4";
   if (options.clear !== false) ctx.clearRect(0, 0, width, height);

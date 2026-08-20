@@ -25,9 +25,13 @@ npm run dev
 | Webcam — one still per camera step + mic wind and meter | http://localhost:5173/examples/webcam.html | [webcam](https://www.miltonlaufer.com.ar/glyph-matter-examples/webcam.html) |
 | Audio — wind from *Terminal Hours* (stop, optional analyser lowpass) | http://localhost:5173/examples/audio.html | [audio](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio.html) |
 | Audio bands — treble wind, bass vortex | http://localhost:5173/examples/audio-bands.html | [audio-bands](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio-bands.html) |
+| Audio beats — kick gust, bass vortex, period from beat gap | http://localhost:5173/examples/audio-beats.html | [audio-beats](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio-beats.html) |
 
 The font is the copy in `public/fonts/EBGaramond-Regular.ttf`. Point
 `FONT_URL` in `shared.ts` at another `.ttf` / `.otf` if you like.
+
+Dots are sized in CSS pixels (not backing-store pixels), so a Retina
+screen does not shrink them to a 1-device-pixel spray.
 
 The full workbench (all knobs; hamburger menu on a narrow screen) is
 http://localhost:5173/ locally and
@@ -38,7 +42,7 @@ With the workbench running, Chrome, and ffmpeg:
 
 ```bash
 npm run media         # stills + GIFs for the README
-npm run media:video   # MP4s (skips webcam; audio muxed on audio / audio-bands)
+npm run media:video   # MP4s (skips webcam; audio muxed on audio / audio-bands / audio-beats)
 ```
 
 The hosted folder is built with `npm run build:examples` (from this repo)

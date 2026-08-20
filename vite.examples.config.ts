@@ -66,6 +66,7 @@ export default defineConfig({
         webcam: resolve(root, "examples/webcam.html"),
         audio: resolve(root, "examples/audio.html"),
         "audio-bands": resolve(root, "examples/audio-bands.html"),
+        "audio-beats": resolve(root, "examples/audio-beats.html"),
       },
     },
   },

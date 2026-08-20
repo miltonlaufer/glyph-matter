@@ -11,6 +11,7 @@ const FILES = [
   { file: "webcam.html", label: "webcam" },
   { file: "audio.html", label: "audio" },
   { file: "audio-bands.html", label: "audio-bands" },
+  { file: "audio-beats.html", label: "audio-beats" },
 ] as const;
 
 function isDevRoot(): boolean {

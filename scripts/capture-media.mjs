@@ -493,6 +493,20 @@ async function main() {
         clickStart: true,
         audio: AUDIO,
       },
+      {
+        name: "audio-beats",
+        url: `${BASE}/examples/audio-beats.html`,
+        seconds: 16,
+        width: 800,
+        height: 300,
+        videoWidth: 1280,
+        videoHeight: 480,
+        scale: 560,
+        gif: false,
+        video: true,
+        clickStart: true,
+        audio: AUDIO,
+      },
     ];
 
     const jobs = examples.filter((job) => {
