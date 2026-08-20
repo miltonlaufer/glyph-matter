@@ -381,13 +381,13 @@ as ways ink travels between words.
 
 | Library | What it does | Gap |
 | --- | --- | --- |
-| [glyphdust](https://github.com/dgreenheck/glyphdust) | R3F: text → GPU particles → next glyph, often scroll-driven | Motion graphic; no glyph ids, no CA / growth, no shipped packs |
-| [jl-particle-interactive](https://github.com/JLpensador/jl-particle-interactive), [canvas-text-particle](https://github.com/wangyasai/canvas-text-particle), masoneffect-style demos | Draw text, sample **pixels**, spring to homes, mouse scatter | Raster sampling; no linguistic morph, no identity |
+| [glyphdust](https://github.com/linno-inc/glyphdust) | R3F: text → GPU particles → next glyph, often scroll-driven | Motion graphic; no glyph ids, no CA / growth, no shipped packs |
+| [jl-particle-interactive](https://github.com/cjorgeluis122333/jl-particles-interactive), [canvas-text-particle](https://github.com/dango0812/canvas-text-particle), [masoneffect](https://github.com/fe-hyunsu/masoneffect) | Draw text, sample **pixels**, spring to homes, mouse scatter | Raster sampling; no linguistic morph, no identity |
 | [tsparticles](https://github.com/tsparticles/tsparticles) | General particle engine | Text is a shape emitter, not a word with letters |
-| [flubber](https://github.com/veltman/flubber), [GSAP MorphSVG](https://gsap.com/docs/v3/Plugins/MorphSVGPlugin/), Kute.js | Interpolate **SVG paths** | The behavior this engine treats as one plugin, not the runtime |
+| [flubber](https://github.com/veltman/flubber), [GSAP MorphSVG](https://gsap.com/docs/v3/Plugins/MorphSVGPlugin/), [KUTE.js](https://github.com/thednp/kute.js) | Interpolate **SVG paths** | The behavior this engine treats as one plugin, not the runtime |
 | [opentype.js](https://github.com/opentypejs/opentype.js) | Parse fonts, get glyph paths | A dependency here, not a particle engine |
-| [p5.Font](https://p5js.org/reference/p5.Font/), Paper.js | Rasterize or draw text | Drawing tools, not a morphing word field |
-| [jasonwebb/2d-differential-growth-experiments](https://github.com/jasonwebb/2d-differential-growth-experiments), adrianton3-style DG sketches | Differential growth on polylines / SVG | Growth experiments, not a word engine |
+| [p5.Font](https://p5js.org/reference/p5/p5.Font/), [Paper.js](https://github.com/paperjs/paper.js) | Rasterize or draw text | Drawing tools, not a morphing word field |
+| [jasonwebb/2d-differential-growth-experiments](https://github.com/jasonwebb/2d-differential-growth-experiments), [adrianton3/differential-growth](https://github.com/adrianton3/differential-growth) | Differential growth on polylines / SVG | Growth experiments, not a word engine |
 
 If you know a closer relative, please open an issue — that comparison belongs
 in this list.
