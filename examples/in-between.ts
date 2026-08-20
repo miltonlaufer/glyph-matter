@@ -57,6 +57,7 @@ const viewBounds = unionBounds(
   packs[1].bounds,
   packs[0].sampling.fontSize * 0.4,
 );
+/** Next pack to morph into. Flip only after a word has formed. */
 let toward = 1;
 let phase: "dissolve" | "travel" | "form" | "hold" = "hold";
 let elapsed = 0;
@@ -74,7 +75,6 @@ loop((dt) => {
   elapsed += dt;
 
   if (phase === "hold" && elapsed >= HOLD_T) {
-    toward = 1 - toward;
     beginDissolve();
   } else if (phase === "dissolve") {
     world.configure({ legibility: dissolveLegibility(elapsed) });
@@ -98,6 +98,7 @@ loop((dt) => {
     if (u >= 1) {
       phase = "hold";
       elapsed = 0;
+      toward = 1 - toward;
       world.configure({ legibility: REST });
     }
   }
