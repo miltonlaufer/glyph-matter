@@ -21,7 +21,7 @@ import {
   makeView,
   pickOnset,
 } from "../src/lib/index.ts";
-import { FONT_URL, SAMPLE, loop, sizeCanvas, unionBounds } from "./shared.ts";
+import { FONT_URL, SAMPLE, followPointer, loop, sizeCanvas, unionBounds } from "./shared.ts";
 import { mountSiteNav } from "./nav.ts";
 
 mountSiteNav();
@@ -85,6 +85,7 @@ const sequence = new Sequence(gm, world).addAnimationSteps([
   { word: "matter", duration: 5.2, inBetween: "dissolve", stiffness: 52, legibility: 0.99 },
   { word: "dancing", duration: 5.6, inBetween: "dissolve", stiffness: 52, legibility: 0.99 },
 ]);
+const setPointerView = followPointer(canvas, world);
 
 const audio = new Audio(`${import.meta.env.BASE_URL}audio/Terminal_Hours.mp3`);
 audio.loop = true;
@@ -249,6 +250,7 @@ loop((dt) => {
     em: a.sampling.fontSize,
     originX,
   });
+  setPointerView(view);
   drawParticles(ctx, world.particles, view, {
     contourColor: "#1c1b19",
     fillColor: "#7a756c",

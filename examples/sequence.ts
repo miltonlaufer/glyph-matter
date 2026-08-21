@@ -10,7 +10,7 @@ import {
   makeView,
 } from "../src/lib/index.ts";
 import { mountSiteNav } from "./nav.ts";
-import { FONT_URL, SAMPLE, loop, sizeCanvas, unionBounds } from "./shared.ts";
+import { FONT_URL, SAMPLE, followPointer, loop, sizeCanvas, unionBounds } from "./shared.ts";
 
 mountSiteNav();
 
@@ -44,6 +44,8 @@ const show = new Sequence(gm, world)
   ])
   .play();
 
+const setPointerView = followPointer(canvas, world);
+
 loop((dt) => {
   const dpr = sizeCanvas(canvas);
   show.tick(dt);
@@ -54,6 +56,7 @@ loop((dt) => {
     em: a.sampling.fontSize,
     originX,
   });
+  setPointerView(view);
   drawParticles(ctx, world.particles, view, {
     contourColor: "#1c1b19",
     fillColor: "#7a756c",

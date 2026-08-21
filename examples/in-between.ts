@@ -8,7 +8,7 @@
  */
 import { GlyphMatter, World, drawParticles, makeView } from "../src/lib/index.ts";
 import { mountSiteNav } from "./nav.ts";
-import { FONT_URL, SAMPLE, loop, sizeCanvas, unionBounds } from "./shared.ts";
+import { FONT_URL, SAMPLE, followPointer, loop, sizeCanvas, unionBounds } from "./shared.ts";
 
 mountSiteNav();
 
@@ -53,6 +53,7 @@ const world = new World().load(packs[0]).configure({
   gas: 90,
   legibility: REST,
 });
+const setPointerView = followPointer(canvas, world);
 
 const originX = packs[0].bounds.x + packs[0].bounds.w / 2;
 const viewBounds = unionBounds(
@@ -114,6 +115,7 @@ loop((dt) => {
     em: packs[0].sampling.fontSize,
     originX,
   });
+  setPointerView(view);
   drawParticles(ctx, world.particles, view, {
     contourColor: "#1c1b19",
     fillColor: "#7a756c",

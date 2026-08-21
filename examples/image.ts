@@ -11,7 +11,7 @@ import {
   sampleImage,
   scalePack,
 } from "../src/lib/index.ts";
-import { FONT_URL, SAMPLE, loop, sizeCanvas, unionAll } from "./shared.ts";
+import { FONT_URL, SAMPLE, followPointer, loop, sizeCanvas, unionAll } from "./shared.ts";
 import { mountSiteNav } from "./nav.ts";
 
 mountSiteNav();
@@ -81,6 +81,8 @@ const sequence = new Sequence(gm, world)
   ])
   .play();
 
+const setPointerView = followPointer(canvas, world);
+
 loop((dt) => {
   const dpr = sizeCanvas(canvas);
   sequence.tick(dt);
@@ -91,6 +93,7 @@ loop((dt) => {
     em: glyph.sampling.fontSize,
     originX,
   });
+  setPointerView(view);
   drawParticles(ctx, world.particles, view, {
     contourColor: "#1c1b19",
     fillColor: "#7a756c",

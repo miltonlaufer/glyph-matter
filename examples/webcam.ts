@@ -17,7 +17,7 @@ import {
   type ImageSampleOptions,
   type SamplePack,
 } from "../src/lib/index.ts";
-import { FONT_URL, SAMPLE, loop, sizeCanvas, unionAll } from "./shared.ts";
+import { FONT_URL, SAMPLE, followPointer, loop, sizeCanvas, unionAll } from "./shared.ts";
 import { mountSiteNav } from "./nav.ts";
 
 mountSiteNav();
@@ -70,6 +70,7 @@ const world = new World().configure({
   legibility: 0.82,
 });
 world.load(glyph);
+const setPointerView = followPointer(canvas, world);
 
 const video = document.createElement("video");
 video.playsInline = true;
@@ -265,6 +266,7 @@ loop((dt) => {
     em: glyph.sampling.fontSize,
     originX,
   });
+  setPointerView(view);
   drawParticles(ctx, world.particles, view, {
     contourColor: "#1c1b19",
     fillColor: "#7a756c",

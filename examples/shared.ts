@@ -1,3 +1,5 @@
+import { screenToWorld, type View, type World } from "../src/lib/index.ts";
+
 export const FONT_URL = `${import.meta.env.BASE_URL}fonts/EBGaramond-Regular.ttf`;
 
 export const SAMPLE = {
@@ -44,4 +46,35 @@ export function loop(fn: (dt: number) => void): void {
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
+}
+
+/**
+ * Workbench pointer: hover repels ink, hold pushes harder.
+ * Call the returned function with the current view each frame.
+ */
+export function followPointer(
+  canvas: HTMLCanvasElement,
+  world: World,
+): (view: View) => void {
+  let view: View | null = null;
+  const apply = (event: PointerEvent, down?: boolean) => {
+    if (!view) return;
+    const p = screenToWorld(event.offsetX, event.offsetY, view);
+    world.pointer = { x: p.x, y: p.y, down: down ?? event.buttons !== 0 };
+  };
+  canvas.addEventListener("pointermove", (event) => apply(event));
+  canvas.addEventListener("pointerdown", (event) => {
+    canvas.setPointerCapture(event.pointerId);
+    apply(event, true);
+  });
+  canvas.addEventListener("pointerup", (event) => apply(event, false));
+  canvas.addEventListener("pointercancel", () => {
+    world.pointer = null;
+  });
+  canvas.addEventListener("pointerleave", () => {
+    world.pointer = null;
+  });
+  return (next) => {
+    view = next;
+  };
 }

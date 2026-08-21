@@ -3,7 +3,7 @@
  */
 import { GlyphMatter, World, drawParticles, makeView } from "../src/lib/index.ts";
 import { mountSiteNav } from "./nav.ts";
-import { FONT_URL, SAMPLE, loop, sizeCanvas, unionBounds } from "./shared.ts";
+import { FONT_URL, SAMPLE, followPointer, loop, sizeCanvas, unionBounds } from "./shared.ts";
 
 mountSiteNav();
 
@@ -20,6 +20,7 @@ if (!from) throw new Error("sampling failed");
 const packs = [from, matter.samplePack(words[1])] as const;
 const world = new World().load(packs[0]);
 world.configure({ stiffness: 22, damping: 6 });
+const setPointerView = followPointer(canvas, world);
 
 let index = 0;
 let hold = 0;
@@ -46,6 +47,7 @@ loop((dt) => {
     em: packs[0].sampling.fontSize,
     originX,
   });
+  setPointerView(view);
   drawParticles(ctx, world.particles, view, {
     contourColor: "#1c1b19",
     fillColor: "#7a756c",

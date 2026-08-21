@@ -15,7 +15,7 @@ import {
   type ParticleEffect,
 } from "../src/lib/index.ts";
 import { mountSiteNav } from "./nav.ts";
-import { FONT_URL, SAMPLE, loop, sizeCanvas, unionBounds } from "./shared.ts";
+import { FONT_URL, SAMPLE, followPointer, loop, sizeCanvas, unionBounds } from "./shared.ts";
 
 mountSiteNav();
 
@@ -44,6 +44,7 @@ const world = new World().configure({
   gas: 90,
   legibility: 1,
 });
+const setPointerView = followPointer(canvas, world);
 
 function forceFor(which: typeof kind): ParticleEffect {
   if (which === "attract") {
@@ -93,6 +94,7 @@ loop((dt) => {
     em: a.sampling.fontSize,
     originX,
   });
+  setPointerView(view);
   drawParticles(ctx, world.particles, view, {
     contourColor: "#1c1b19",
     fillColor: "#7a756c",

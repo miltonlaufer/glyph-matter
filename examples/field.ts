@@ -2,9 +2,9 @@
  * Field: a sampled word as springy matter. Move the pointer to push ink;
  * click to scatter.
  */
-import { GlyphMatter, World, drawParticles, makeView, screenToWorld } from "../src/lib/index.ts";
+import { GlyphMatter, World, drawParticles, makeView } from "../src/lib/index.ts";
 import { mountSiteNav } from "./nav.ts";
-import { FONT_URL, SAMPLE, loop, sizeCanvas } from "./shared.ts";
+import { FONT_URL, SAMPLE, followPointer, loop, sizeCanvas } from "./shared.ts";
 
 mountSiteNav();
 
@@ -21,21 +21,7 @@ const pack = matter.getPack();
 if (!pack) throw new Error("sampling failed");
 world.load(pack);
 
-canvas.addEventListener("pointermove", (event) => {
-  const dpr = sizeCanvas(canvas);
-  const view = makeView(world.homeBounds(), canvas.width, canvas.height, {
-    fit: "contain",
-    dpr,
-    baseline: 0,
-    em: pack.sampling.fontSize,
-  });
-  const p = screenToWorld(event.offsetX, event.offsetY, view);
-  world.pointer = { x: p.x, y: p.y, down: event.buttons > 0 };
-});
-
-canvas.addEventListener("pointerleave", () => {
-  world.pointer = null;
-});
+const setPointerView = followPointer(canvas, world);
 
 canvas.addEventListener("click", () => {
   world.scatter(520);
@@ -50,6 +36,7 @@ loop((dt) => {
     baseline: 0,
     em: pack.sampling.fontSize,
   });
+  setPointerView(view);
   drawParticles(ctx, world.particles, view, {
     contourColor: "#1c1b19",
     fillColor: "#7a756c",
