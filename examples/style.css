@@ -155,7 +155,7 @@ canvas {
 .readout {
   display: grid;
   gap: 0.32rem;
-  min-width: 240px;
+  min-width: 280px;
   margin: 0;
   padding: 0.65rem 0.9rem;
   border: 1px solid #2a2926;
@@ -166,9 +166,13 @@ canvas {
 
 .readout-row {
   display: grid;
-  grid-template-columns: 3.6rem 4.6rem 1fr;
+  grid-template-columns: 6.4rem 5.6rem 1fr;
   align-items: center;
   gap: 0.45rem;
+}
+
+.readout-row > span:first-child {
+  white-space: nowrap;
 }
 
 .readout-bar {

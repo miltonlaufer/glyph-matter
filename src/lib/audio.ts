@@ -112,6 +112,114 @@ export function pickOnset(
   return Math.min(1, flux / Math.max(gate, 1e-6));
 }
 
+function asUnitSample(v: number): number {
+  return v > 1.5 || v < -1.5 ? (v - 128) / 128 : v;
+}
+
+/** Lowpassed waveform punch vs a slow floor. FFT flux is a bad kick detector. */
+export type KickFollow = {
+  lp: number;
+  slow: number;
+  until: number;
+};
+
+export function createKickFollow(): KickFollow {
+  return { lp: 0, slow: 1e-4, until: 0 };
+}
+
+/**
+ * Kick onset from a time-domain buffer (`getFloatTimeDomainData` or byte
+ * waveform). One-pole lowpass (~100 Hz), then a hit when this frame's
+ * energy jumps above a slow envelope. Sustained bass does not retrigger.
+ */
+export function kickFromWaveform(
+  wave: ArrayLike<number>,
+  sampleRate: number,
+  follow: KickFollow,
+  time: number,
+  options: {
+    cutoff?: number;
+    refractory?: number;
+    ratio?: number;
+    floor?: number;
+    adapt?: number;
+  } = {},
+): number {
+  if (wave.length === 0 || sampleRate <= 0) return 0;
+  const cutoff = options.cutoff ?? 100;
+  const refractory = options.refractory ?? 0.16;
+  const ratio = options.ratio ?? 1.7;
+  const floor = options.floor ?? 0.008;
+  const adapt = options.adapt ?? 0.1;
+  const alpha = 1 - Math.exp((-2 * Math.PI * cutoff) / sampleRate);
+  let lp = follow.lp;
+  let sum = 0;
+  for (let i = 0; i < wave.length; i++) {
+    const x = asUnitSample(wave[i]!);
+    lp += alpha * (x - lp);
+    sum += lp * lp;
+  }
+  follow.lp = lp;
+  const energy = Math.sqrt(sum / wave.length);
+  const punch = energy - follow.slow * ratio;
+  const hit =
+    time >= follow.until && energy >= floor && punch > 0
+      ? Math.min(1, punch / Math.max(energy, floor))
+      : 0;
+  follow.slow += (energy - follow.slow) * adapt;
+  if (follow.slow < 1e-6) follow.slow = 1e-6;
+  if (hit > 0) {
+    follow.until = time + refractory;
+    follow.slow = Math.max(follow.slow, energy * 0.55);
+  }
+  return hit;
+}
+
+/** Two-pole highpass + one-pole lowpass state for {@link bandRmsFromWaveform}. */
+export type BandRmsFollow = {
+  lo1: number;
+  lo2: number;
+  hi: number;
+};
+
+export function createBandRmsFollow(): BandRmsFollow {
+  return { lo1: 0, lo2: 0, hi: 0 };
+}
+
+/**
+ * Time-domain energy in `[loHz, hiHz]`. Mean FFT bins in a dense midrange
+ * clip at 1 on a mastered mix; this follows the line (kicks stay out).
+ */
+export function bandRmsFromWaveform(
+  wave: ArrayLike<number>,
+  sampleRate: number,
+  follow: BandRmsFollow,
+  loHz: number,
+  hiHz: number,
+): number {
+  if (wave.length === 0 || sampleRate <= 0 || hiHz <= loHz) return 0;
+  const aLo = 1 - Math.exp((-2 * Math.PI * loHz) / sampleRate);
+  const aHi = 1 - Math.exp((-2 * Math.PI * hiHz) / sampleRate);
+  let lo1 = follow.lo1;
+  let lo2 = follow.lo2;
+  let hi = follow.hi;
+  let sum = 0;
+  for (let i = 0; i < wave.length; i++) {
+    const x = asUnitSample(wave[i]!);
+    lo1 += aLo * (x - lo1);
+    const hp1 = x - lo1;
+    lo2 += aLo * (hp1 - lo2);
+    const hp2 = hp1 - lo2;
+    hi += aHi * (hp2 - hi);
+    sum += hi * hi;
+  }
+  follow.lo1 = lo1;
+  follow.lo2 = lo2;
+  follow.hi = hi;
+  const rms = Math.sqrt(sum / wave.length);
+  return Math.min(1, Math.max(0, rms - 0.012) * 8);
+}
+
 /** Fold an inter-onset interval into a visible wind period (~0.32–1.6 s). */
 export function visualBeatPeriod(ioi: number): number {
   if (!(ioi > 0)) return 0;

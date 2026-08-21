@@ -1,7 +1,8 @@
 /**
  * glyph → matter → dancing.
  * Kick onsets punch the traveling gust and set its period (beat gap).
- * Bass energy drives the vortex; hat/snare onsets add to the gust.
+ * Bass energy drives the vortex; midrange loosens the letters (less
+ * legibility, more gas); hats add to the gust.
  */
 import {
   GlyphMatter,
@@ -9,10 +10,14 @@ import {
   World,
   bandEnergy,
   bandFlux,
+  bandRmsFromWaveform,
+  createBandRmsFollow,
+  createKickFollow,
   createOnsetPicker,
   createTempoFollow,
   drawParticles,
   followTempo,
+  kickFromWaveform,
   makeView,
   pickOnset,
 } from "../src/lib/index.ts";
@@ -33,6 +38,9 @@ const readout = {
   hats: document.querySelector<HTMLElement>('[data-k="hats"]'),
   gust: document.querySelector<HTMLElement>('[data-k="gust"]'),
   bass: document.querySelector<HTMLElement>('[data-k="bass"]'),
+  melody: document.querySelector<HTMLElement>('[data-k="melody"]'),
+  gas: document.querySelector<HTMLElement>('[data-k="gas"]'),
+  legibility: document.querySelector<HTMLElement>('[data-k="legibility"]'),
   period: document.querySelector<HTMLElement>('[data-k="period"]'),
 };
 const readoutBar = {
@@ -40,6 +48,9 @@ const readoutBar = {
   hats: document.querySelector<HTMLElement>('[data-bar="hats"]'),
   gust: document.querySelector<HTMLElement>('[data-bar="gust"]'),
   bass: document.querySelector<HTMLElement>('[data-bar="bass"]'),
+  melody: document.querySelector<HTMLElement>('[data-bar="melody"]'),
+  gas: document.querySelector<HTMLElement>('[data-bar="gas"]'),
+  legibility: document.querySelector<HTMLElement>('[data-bar="legibility"]'),
   period: document.querySelector<HTMLElement>('[data-bar="period"]'),
 };
 
@@ -84,12 +95,17 @@ let source: MediaElementAudioSourceNode | null = null;
 let analyser: AnalyserNode | null = null;
 let bins: Uint8Array<ArrayBuffer> | null = null;
 let prev: Uint8Array<ArrayBuffer> | null = null;
+let wave: Float32Array<ArrayBuffer> | null = null;
 let primed = false;
 let live = false;
 let clock = 0;
 let kickEnv = 0;
 let hatEnv = 0;
-let kickPick = createOnsetPicker();
+let melodyEnv = 0;
+let holdGas = 40;
+let holdLeg = 0.99;
+let kickFollow = createKickFollow();
+let melodyFollow = createBandRmsFollow();
 let hatPick = createOnsetPicker();
 let snarePick = createOnsetPicker();
 let tempo = createTempoFollow(0.72);
@@ -110,6 +126,7 @@ async function start(): Promise<void> {
     analyser.smoothingTimeConstant = 0.22;
     bins = new Uint8Array(analyser.frequencyBinCount);
     prev = new Uint8Array(analyser.frequencyBinCount);
+    wave = new Float32Array(analyser.fftSize);
     source.connect(ctxAudio.destination);
     source.connect(analyser);
   }
@@ -117,7 +134,9 @@ async function start(): Promise<void> {
   clock = 0;
   kickEnv = 0;
   hatEnv = 0;
-  kickPick = createOnsetPicker();
+  melodyEnv = 0;
+  kickFollow = createKickFollow();
+  melodyFollow = createBandRmsFollow();
   hatPick = createOnsetPicker();
   snarePick = createOnsetPicker();
   tempo = createTempoFollow(0.72);
@@ -134,6 +153,9 @@ function stop(): void {
   primed = false;
   kickEnv = 0;
   hatEnv = 0;
+  melodyEnv = 0;
+  kickFollow = createKickFollow();
+  melodyFollow = createBandRmsFollow();
   tempo = createTempoFollow(0.72);
   void ctxAudio?.suspend();
   showPlaying(false);
@@ -155,17 +177,13 @@ function hold(env: number, hit: number, dt: number, tau: number): number {
 
 loop((dt) => {
   const dpr = sizeCanvas(canvas);
-  if (live && analyser && bins && prev) {
+  if (live && analyser && bins && prev && wave) {
     clock += dt;
+    analyser.getFloatTimeDomainData(wave);
     analyser.getByteFrequencyData(bins);
     const binHz = analyser.context.sampleRate / analyser.fftSize;
     if (primed) {
-      const kickHit = pickOnset(bandFlux(bins, prev, binHz, 35, 140), kickPick, clock, {
-        refractory: 0.14,
-        k: 1.55,
-        floor: 0.02,
-        history: 28,
-      });
+      const kickHit = kickFromWaveform(wave, analyser.context.sampleRate, kickFollow, clock);
       const snareHit = pickOnset(bandFlux(bins, prev, binHz, 150, 400), snarePick, clock, {
         refractory: 0.11,
       });
@@ -173,28 +191,38 @@ loop((dt) => {
         refractory: 0.05,
         k: 1.55,
       });
-      kickEnv = hold(kickEnv, kickHit, dt, 0.2);
+      kickEnv = hold(kickEnv, kickHit, dt, 0.24);
       hatEnv = hold(hatEnv, Math.max(hatHit, snareHit * 0.75), dt, 0.1);
       const period = followTempo(tempo, kickHit > 0, clock);
-      const beat = Math.min(1, kickEnv * 0.7 + hatEnv * 0.4);
+      const windPeriod = period * 0.5;
+      const beat = Math.min(1, kickEnv * 1.1 + hatEnv * 0.28);
       const bass = bandEnergy(bins, binHz, 20, 280);
+      const melody = bandRmsFromWaveform(wave, analyser.context.sampleRate, melodyFollow, 400, 1600);
+      melodyEnv += (melody - melodyEnv) * 0.22;
       setReadout("kick", kickEnv.toFixed(2), kickEnv);
       setReadout("hats", hatEnv.toFixed(2), hatEnv);
       setReadout("gust", beat.toFixed(2), beat);
       setReadout("bass", bass.toFixed(2), bass);
+      setReadout("melody", melodyEnv.toFixed(2), melodyEnv);
+      const gas = 36 + melodyEnv * 180;
+      const legibility = Math.max(0.08, 0.99 - melodyEnv * 2.2);
+      holdGas = gas;
+      holdLeg = legibility;
+      setReadout("gas", gas.toFixed(0), (gas - 36) / 180);
+      setReadout("legibility", legibility.toFixed(2), legibility);
       setReadout(
         "period",
-        `${period.toFixed(2)}s ${Math.round(60 / Math.max(period, 0.01))}bpm`,
+        `${windPeriod.toFixed(2)}s 2× ${Math.round(60 / Math.max(period, 0.01))}bpm`,
         (period - 0.32) / (1.6 - 0.32),
       );
       const box = world.homeBounds();
       world.setEffects([
         {
           kind: "wind",
-          vx: 20 + beat * 260,
+          vx: 18 + beat * 400,
           vy: (TREBLE - 0.35) * 70,
-          gust: 8 + beat * 110,
-          period,
+          gust: 8 + beat * 175,
+          period: windPeriod,
           wavelength: 80 + period * 380,
         },
         {
@@ -211,6 +239,9 @@ loop((dt) => {
     prev.set(bins);
   }
   sequence.tick(dt);
+  if (live && sequence.phase === "hold") {
+    world.configure({ gas: holdGas, legibility: holdLeg });
+  }
   const view = makeView(viewBounds, canvas.width, canvas.height, {
     fit: "contain",
     dpr,

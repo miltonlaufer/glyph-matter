@@ -36,6 +36,10 @@ import {
   windFromAnalyser,
   createOnsetPicker,
   pickOnset,
+  createKickFollow,
+  kickFromWaveform,
+  createBandRmsFollow,
+  bandRmsFromWaveform,
   createTempoFollow,
   followTempo,
   displayInk,
@@ -556,10 +560,13 @@ traveling-wave rate; treble scales that gust, bass drives a vortex.
 `bandEnergy(freq, binHz, loHz, hiHz)` is the same mean as `spectrumEnergy`
 but only for bins in that Hertz range (`binHz` is `sampleRate / fftSize`).
 `bandFlux(curr, prev, binHz, loHz, hiHz)` is half-wave spectral flux in
-that band (drum hits, not sustained notes). `pickOnset(flux, picker, time)`
-is an adaptive peak-picker with a refractory window. `followTempo`
-turns kick-to-kick gaps into the traveling-wind period (see
-`examples/audio-beats.ts`: kick punches the gust, bass drives the vortex).
+that band (useful for hats). `kickFromWaveform(wave, sampleRate, follow, time)`
+is a lowpassed time-domain punch vs a slow floor — use this for kicks,
+not FFT flux. `bandRmsFromWaveform(wave, sampleRate, follow, loHz, hiHz)`
+is midrange (or any band) presence from the waveform; `bandEnergy` clips
+on a dense mastered mix. `pickOnset(flux, picker, time)` is an adaptive peak-picker
+with a refractory window. `followTempo` turns kick-to-kick gaps into the
+traveling-wind period (see `examples/audio-beats.ts`).
 
 `applyEffect(effect, particle, dt, time?)` is the same function `World.step` uses,
 exported for tests and custom integrators. `time` is seconds; wind uses it for

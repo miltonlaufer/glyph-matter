@@ -14,6 +14,10 @@ import {
   visualBeatPeriod,
   createTempoFollow,
   followTempo,
+  createKickFollow,
+  kickFromWaveform,
+  createBandRmsFollow,
+  bandRmsFromWaveform,
 } from "../src/lib/audio.ts";
 
 describe("audio wind", () => {
@@ -146,5 +150,50 @@ describe("audio wind", () => {
     const held = tempo.period;
     followTempo(tempo, false, 1.6);
     expect(tempo.period).toBe(held);
+  });
+
+  it("fires a kick on a low thump, not on a held bass", () => {
+    const sr = 44100;
+    const n = 1024;
+    const follow = createKickFollow();
+    const tone = (amp: number) => {
+      const w = new Float32Array(n);
+      for (let i = 0; i < n; i++) w[i] = amp * Math.sin((2 * Math.PI * 60 * i) / sr);
+      return w;
+    };
+    const quiet = tone(0.03);
+    for (let t = 0; t < 0.4; t += 1 / 60) kickFromWaveform(quiet, sr, follow, t);
+    expect(kickFromWaveform(quiet, sr, follow, 0.42)).toBe(0);
+    const hit = kickFromWaveform(tone(0.55), sr, follow, 0.44);
+    expect(hit).toBeGreaterThan(0);
+    expect(kickFromWaveform(tone(0.55), sr, follow, 0.46)).toBe(0);
+  });
+
+  it("reads a midrange tone without pinning a moderate line at 1", () => {
+    const sr = 44100;
+    const n = 2048;
+    const settle = (hz: number, amp: number) => {
+      const follow = createBandRmsFollow();
+      const w = new Float32Array(n);
+      const step = (2 * Math.PI * hz) / sr;
+      let phase = 0;
+      let v = 0;
+      for (let f = 0; f < 40; f++) {
+        for (let i = 0; i < n; i++) {
+          w[i] = amp * Math.sin(phase);
+          phase += step;
+        }
+        v = bandRmsFromWaveform(w, sr, follow, 400, 1600);
+      }
+      return v;
+    };
+    const melody = settle(800, 0.08);
+    const kick = settle(60, 0.6);
+    const quiet = settle(800, 0.03);
+    const loud = settle(800, 0.14);
+    expect(melody).toBeGreaterThan(0.1);
+    expect(melody).toBeLessThan(0.85);
+    expect(melody).toBeGreaterThan(kick + 0.12);
+    expect(loud).toBeGreaterThan(quiet + 0.2);
   });
 });

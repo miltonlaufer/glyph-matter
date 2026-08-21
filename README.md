@@ -212,7 +212,7 @@ Publish a fresh copy of the live folder with `npm run build:examples` (writes `.
 
 **Audio bands** — same track and words. Treble (2–8 kHz) drives a fixed-rate traveling wind; bass (20–280 Hz) drives a vortex below the word.
 
-**Audio beats** — same loop. Kick **onsets** punch the traveling gust and set its period (gap between kicks). Bass energy (20–280 Hz) drives the vortex; hats/snares add to the gust.
+**Audio beats** — same loop. Kick **onsets** punch the traveling gust and set its period (gap between kicks). Bass energy (20–280 Hz) drives the vortex; midrange melody loosens the gas; hats/snares add to the gust.
 
 MP4 recordings of the sketches (except webcam, which needs a camera) live in [`docs/media/`](docs/media/). Audio examples include *Terminal Hours*. Regenerate with `npm run media:video` while the workbench is running.
 
