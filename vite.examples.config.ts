@@ -62,6 +62,7 @@ export default defineConfig({
         wind: resolve(root, "examples/wind.html"),
         vortex: resolve(root, "examples/vortex.html"),
         sequence: resolve(root, "examples/sequence.html"),
+        collide: resolve(root, "examples/collide.html"),
         image: resolve(root, "examples/image.html"),
         webcam: resolve(root, "examples/webcam.html"),
         audio: resolve(root, "examples/audio.html"),

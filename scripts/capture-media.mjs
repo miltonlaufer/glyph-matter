@@ -456,6 +456,16 @@ async function main() {
         video: true,
       },
       {
+        name: "collide",
+        url: `${BASE}/examples/collide.html`,
+        seconds: 12,
+        width: 1100,
+        height: 520,
+        scale: 720,
+        gif: true,
+        video: true,
+      },
+      {
         name: "image",
         url: `${BASE}/examples/image.html`,
         seconds: 12.5,

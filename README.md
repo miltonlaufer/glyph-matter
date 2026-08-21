@@ -61,7 +61,7 @@ npm run dev
 ```
 
 Open `http://localhost:5173/` for the interactive workbench (font sampling,
-word→word morph, dissolve, image contours, effects). On a narrow screen the
+word→word morph, collide, dissolve, image contours, effects). On a narrow screen the
 sidebar hides behind a hamburger at the top left.
 
 ![The glyph-matter workbench: sidebar controls and a dissolving word on the canvas](docs/media/workbench.png)
@@ -170,6 +170,7 @@ Source for those pages is the workbench plus [`examples/`](examples/). After `np
 | Wind (traveling gust) | http://localhost:5173/examples/wind.html | [wind](https://www.miltonlaufer.com.ar/glyph-matter-examples/wind.html) |
 | Vortex | http://localhost:5173/examples/vortex.html | [vortex](https://www.miltonlaufer.com.ar/glyph-matter-examples/vortex.html) |
 | Sequence + wind / attract | http://localhost:5173/examples/sequence.html | [sequence](https://www.miltonlaufer.com.ar/glyph-matter-examples/sequence.html) |
+| Collide — two words meet as a third | http://localhost:5173/examples/collide.html | [collide](https://www.miltonlaufer.com.ar/glyph-matter-examples/collide.html) |
 | Image contours | http://localhost:5173/examples/image.html | [image](https://www.miltonlaufer.com.ar/glyph-matter-examples/image.html) |
 | Webcam — one still per camera step + mic | http://localhost:5173/examples/webcam.html | [webcam](https://www.miltonlaufer.com.ar/glyph-matter-examples/webcam.html) |
 | Audio wind | http://localhost:5173/examples/audio.html | [audio](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio.html) |
@@ -213,6 +214,10 @@ Publish a fresh copy of the live folder with `npm run build:examples` (writes `.
 **Audio bands** — same track and words. Treble (2–8 kHz) drives a fixed-rate traveling wind; bass (20–280 Hz) drives a vortex below the word.
 
 **Audio beats** — same loop. Kick **onsets** punch the traveling gust and set its period (gap between kicks). Bass energy (20–280 Hz) drives the vortex; midrange melody loosens the gas; hats/snares add to the gust.
+
+**Collide** — two words at once (`signified` above, `signifier` below) spring into a shared point and dissolve into `sign`. The meeting force is a **vortex** by default; `?effect=attract` or `?effect=repel`, and `?up=&down=&into=` change the words.
+
+![signified and signifier colliding into the word sign](docs/media/collide.gif)
 
 MP4 recordings of the sketches (except webcam, which needs a camera) live in [`docs/media/`](docs/media/). Audio examples include *Terminal Hours*. Regenerate with `npm run media:video` while the workbench is running.
 

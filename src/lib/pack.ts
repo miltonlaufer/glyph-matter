@@ -83,6 +83,29 @@ export function placePack(pack: SamplePack, cx: number, cy: number): SamplePack 
   return translatePack(pack, dx, dy);
 }
 
+/** Concatenate two packs. Remaps glyph indices on `b`. */
+export function mergePacks(a: SamplePack, b: SamplePack): SamplePack {
+  if (a.points.length === 0) return b;
+  if (b.points.length === 0) return a;
+  const g0 = a.glyphs.length;
+  let word0 = 0;
+  for (const g of a.glyphs) word0 = Math.max(word0, g.word + 1);
+  const x = Math.min(a.bounds.x, b.bounds.x);
+  const y = Math.min(a.bounds.y, b.bounds.y);
+  const r = Math.max(a.bounds.x + a.bounds.w, b.bounds.x + b.bounds.w);
+  const t = Math.max(a.bounds.y + a.bounds.h, b.bounds.y + b.bounds.h);
+  return {
+    ...a,
+    text: `${a.text} ${b.text}`,
+    glyphs: [
+      ...a.glyphs,
+      ...b.glyphs.map((g) => ({ ...g, i: g.i + g0, word: g.word + word0 })),
+    ],
+    points: [...a.points, ...b.points.map((p) => ({ ...p, g: p.g + g0 }))],
+    bounds: { x, y, w: r - x, h: t - y },
+  };
+}
+
 /** ES module source: `export const <exportName> = { ... }`. */
 export function packToModule(pack: SamplePack, exportName = "glyphPack"): string {
   if (!IDENT.test(exportName)) {

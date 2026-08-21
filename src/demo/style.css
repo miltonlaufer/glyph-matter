@@ -180,14 +180,16 @@ label.check input {
 }
 
 #morph-panel,
-#field-panel {
+#field-panel,
+#collide-panel {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
 }
 
 #morph-panel[hidden],
-#field-panel[hidden] {
+#field-panel[hidden],
+#collide-panel[hidden] {
   display: none;
 }
 

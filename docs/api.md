@@ -20,6 +20,7 @@ import {
   translatePack,
   scalePack,
   placePack,
+  mergePacks,
   sampleImage,
   sampleImageFromRgba,
   spectrumEnergy,
@@ -445,6 +446,10 @@ Scale about the pack's top-left bound.
 ### `placePack(pack, cx, cy): SamplePack`
 
 Move the pack so its center sits on `(cx, cy)`.
+
+### `mergePacks(a, b): SamplePack`
+
+Two packs as one field (stacked words). Glyph indices on `b` are shifted.
 
 ---
 

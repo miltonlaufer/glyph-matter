@@ -64,6 +64,7 @@
         <select id="animation">
           <option value="field">field (scatter / gas / pointer)</option>
           <option value="morph" selected>word → word</option>
+          <option value="collide">collide (two words → one)</option>
         </select>
       </label>
       <div id="field-panel" hidden>
@@ -110,6 +111,32 @@
         <p class="hint">
           The first word is “text” above. Add more words to the loop.
           The in-between is how ink travels from one word to the next.
+        </p>
+      </div>
+
+      <div id="collide-panel" hidden>
+        <label>
+          word up
+          <input id="collideUp" type="text" value="signified" spellcheck="false" />
+        </label>
+        <label>
+          word down
+          <input id="collideDown" type="text" value="signifier" spellcheck="false" />
+        </label>
+        <label>
+          collision
+          <input id="collideInto" type="text" value="sign" spellcheck="false" />
+        </label>
+        <div class="row">
+          <button id="collideGo" type="button">collide</button>
+        </div>
+        <label class="check">
+          <input id="collideLoop" type="checkbox" checked />
+          loop
+        </label>
+        <p class="hint">
+          Two words sit apart, spring into a meeting point, then become the
+          third. Force below is the collision (vortex if you have none).
         </p>
       </div>
 

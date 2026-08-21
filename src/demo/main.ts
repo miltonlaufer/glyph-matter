@@ -6,9 +6,12 @@ import {
   createTestFont,
   drawParticles,
   makeView,
+  mergePacks,
+  placePack,
   screenToWorld,
 } from "../lib/index.ts";
 import type {
+  Bounds,
   InBetween,
   ParticleEffect,
   SamplePack,
@@ -78,6 +81,12 @@ const morphProcess = must(
   "morphProcess",
 );
 const fieldPanel = must(document.querySelector<HTMLElement>("#field-panel"), "field-panel");
+const collidePanel = must(document.querySelector<HTMLElement>("#collide-panel"), "collide-panel");
+const collideUp = must(document.querySelector<HTMLInputElement>("#collideUp"), "collideUp");
+const collideDown = must(document.querySelector<HTMLInputElement>("#collideDown"), "collideDown");
+const collideInto = must(document.querySelector<HTMLInputElement>("#collideInto"), "collideInto");
+const collideGo = must(document.querySelector<HTMLButtonElement>("#collideGo"), "collideGo");
+const collideLoop = must(document.querySelector<HTMLInputElement>("#collideLoop"), "collideLoop");
 const effectKind = must(document.querySelector<HTMLSelectElement>("#effectKind"), "effectKind");
 const effectWind = must(document.querySelector<HTMLElement>("#effect-wind"), "effect-wind");
 const effectPoint = must(document.querySelector<HTMLElement>("#effect-point"), "effect-point");
@@ -147,6 +156,8 @@ let sourceLabel = "none";
 let view: View | null = null;
 let sequence: Sequence | null = null;
 const packCache = new Map<string, SamplePack>();
+let lockedView: Bounds | null = null;
+let collideHit: { x: number; y: number } | null = null;
 const ctx = must(canvas.getContext("2d"), "2d context");
 const HOLD_T = 0.85;
 
@@ -197,6 +208,7 @@ function setStatus(message: string): void {
 }
 
 function effectAnchor(): { x: number; y: number } {
+  if (collideHit) return collideHit;
   const pack = gm.getPack();
   if (!pack) return { x: 0, y: 0 };
   return {
@@ -249,6 +261,7 @@ function syncEffectPanels(): void {
 
 function applyEffectFromUi(): void {
   world.clearEffects();
+  if (animationKind() === "collide" && sequence && sequence.index !== 1) return;
   const kind = effectKind.value;
   if (kind === "none") return;
   const at = pointWell();
@@ -277,6 +290,7 @@ function applyEffectFromUi(): void {
 }
 
 function originXForView(): number {
+  if (collideHit) return collideHit.x;
   const words = loopWords();
   if (sequenceDriving() && words[0] && gm.hasFont()) {
     try {
@@ -299,7 +313,8 @@ function syncCanvas(): void {
   if (canvas.width !== w) canvas.width = w;
   if (canvas.height !== h) canvas.height = h;
   const pack = gm.getPack();
-  const bounds = world.particles.length > 0 ? world.homeBounds() : pack?.bounds;
+  const bounds =
+    lockedView ?? (world.particles.length > 0 ? world.homeBounds() : pack?.bounds);
   view = bounds
     ? makeView(bounds, canvas.width, canvas.height, {
         fit: "actual",
@@ -311,8 +326,10 @@ function syncCanvas(): void {
     : null;
 }
 
-function animationKind(): "field" | "morph" {
-  return animationSelect.value === "morph" ? "morph" : "field";
+function animationKind(): "field" | "morph" | "collide" {
+  const value = animationSelect.value;
+  if (value === "morph" || value === "collide") return value;
+  return "field";
 }
 
 function cssVar(name: string, fallback: string): string {
@@ -382,6 +399,7 @@ function afterSample(origin: string): void {
   setStatus(`${origin} · “${sampled}” · ${glyphs} glyphs · ${n} points`);
   requestAnimationFrame(() => warmMorphPacks());
   if (animationKind() === "morph" && morphLoop.checked) startMorph();
+  if (animationKind() === "collide" && collideLoop.checked) startCollide();
 }
 
 function packCacheKey(text: string): string {
@@ -415,6 +433,10 @@ function packFor(text: string): SamplePack {
 function warmMorphPacks(): void {
   if (!gm.hasFont()) return;
   for (const word of loopWords()) packFor(word);
+  for (const word of [collideUp.value, collideDown.value, collideInto.value]) {
+    const trimmed = word.trim();
+    if (trimmed) packFor(trimmed);
+  }
 }
 
 function startMorph(): void {
@@ -422,6 +444,7 @@ function startMorph(): void {
     setStatus("need a live font to morph");
     return;
   }
+  clearCollideLock();
   applySettings();
   const words = loopWords();
   if (words.length < 2) {
@@ -446,14 +469,121 @@ function startMorph(): void {
   setStatus(`loop · ${words.join(" → ")}`);
 }
 
+function unionBoxes(boxes: Bounds[], pad = 0): Bounds {
+  const first = boxes[0];
+  if (!first) return { x: 0, y: 0, w: 0, h: 0 };
+  let x = first.x;
+  let y = first.y;
+  let r = first.x + first.w;
+  let t = first.y + first.h;
+  for (let i = 1; i < boxes.length; i++) {
+    const b = boxes[i]!;
+    x = Math.min(x, b.x);
+    y = Math.min(y, b.y);
+    r = Math.max(r, b.x + b.w);
+    t = Math.max(t, b.y + b.h);
+  }
+  return { x: x - pad, y: y - pad, w: r - x + pad * 2, h: t - y + pad * 2 };
+}
+
+function startCollide(): void {
+  if (!gm.hasFont()) {
+    setStatus("need a live font to collide");
+    return;
+  }
+  const up = collideUp.value.trim();
+  const down = collideDown.value.trim();
+  const into = collideInto.value.trim();
+  if (!up || !down || !into) {
+    setStatus("need word up, word down, and a collision word");
+    return;
+  }
+  applySettings();
+  const em = gm.fontSize;
+  const cx = 0;
+  const cy = 0;
+  const rawUp = packFor(up);
+  const rawDown = packFor(down);
+  const rawInto = packFor(into);
+  const pairApart = mergePacks(
+    placePack(rawUp, cx, cy - em * 0.95),
+    placePack(rawDown, cx, cy + em * 0.95),
+  );
+  const pairMeet = mergePacks(
+    placePack(rawUp, cx, cy - em * 0.12),
+    placePack(rawDown, cx, cy + em * 0.12),
+  );
+  const result = placePack(rawInto, cx, cy);
+  const restore = sliderLegibility();
+  stopSequence();
+  collideHit = { x: cx, y: cy };
+  lockedView = unionBoxes([pairApart.bounds, pairMeet.bounds, result.bounds], em * 0.55);
+  sequence = new Sequence(gm, world, {
+    loop: collideLoop.checked,
+    formT: 1.2,
+    travelT: 0.7,
+  })
+    .addAnimationSteps([
+      {
+        pack: pairApart,
+        duration: HOLD_T * 1.8,
+        stiffness: 34,
+        damping: 10,
+        legibility: 1,
+        effects: [],
+      },
+      {
+        pack: pairMeet,
+        duration: HOLD_T * 1.6,
+        inBetween: "spring",
+        stiffness: 22,
+        damping: 7,
+        legibility: Math.max(0.72, restore * 0.88),
+        effects: [],
+      },
+      {
+        pack: result,
+        duration: HOLD_T * 3.2,
+        inBetween: "dissolve",
+        stiffness: 52,
+        damping: 14,
+        gas: 40,
+        legibility: 1,
+        effects: [],
+      },
+    ])
+    .play();
+  applyEffectFromUi();
+  setStatus(`collide · ${up} + ${down} → ${into}`);
+}
+
+function clearCollideLock(): void {
+  lockedView = null;
+  collideHit = null;
+}
+
 function syncAnimationPanel(): void {
   const kind = animationKind();
   fieldPanel.hidden = kind !== "field";
   morphPanel.hidden = kind !== "morph";
-  if (kind !== "morph") {
+  collidePanel.hidden = kind !== "collide";
+  if (kind === "field") {
+    clearCollideLock();
     stopSequence();
-  } else {
+  } else if (kind === "morph") {
+    clearCollideLock();
+    stopSequence();
     warmMorphPacks();
+  } else {
+    if (effectKind.value === "none") {
+      effectKind.value = "vortex";
+      effectX.value = "0";
+      effectY.value = "0";
+      syncEffectPanels();
+      applyEffectFromUi();
+    }
+    warmMorphPacks();
+    if (gm.hasFont()) startCollide();
   }
 }
 
@@ -560,16 +690,25 @@ homeBtn.addEventListener("click", () => {
 morphBtn.addEventListener("click", () => {
   startMorph();
 });
+collideGo.addEventListener("click", () => {
+  startCollide();
+});
 addWordBtn.addEventListener("click", () => {
   addWordRow("");
 });
 animationSelect.addEventListener("change", syncAnimationPanel);
 morphLoop.addEventListener("change", () => {
   if (sequence) sequence.loop = morphLoop.checked;
-  if (morphLoop.checked && !sequenceDriving()) startMorph();
+  if (morphLoop.checked && animationKind() === "morph" && !sequenceDriving()) startMorph();
+});
+collideLoop.addEventListener("change", () => {
+  if (sequence) sequence.loop = collideLoop.checked;
+  if (collideLoop.checked && animationKind() === "collide" && !sequenceDriving()) {
+    startCollide();
+  }
 });
 morphProcess.addEventListener("change", () => {
-  if (sequenceDriving()) startMorph();
+  if (sequenceDriving() && animationKind() === "morph") startMorph();
 });
 effectKind.addEventListener("change", () => {
   syncEffectPanels();
@@ -714,6 +853,7 @@ let last = performance.now();
 function tick(now: number): void {
   const dt = Math.min((now - last) / 1000, 1 / 30);
   last = now;
+  if (animationKind() === "collide") applyEffectFromUi();
   if (sequenceDriving()) sequence?.tick(dt);
   else world.step(dt);
   paint();
@@ -722,6 +862,13 @@ function tick(now: number): void {
 
 for (const row of loopWordsEl.querySelectorAll<HTMLElement>(".word-row")) {
   bindWordRow(row);
+}
+
+for (const input of [collideUp, collideDown, collideInto]) {
+  input.addEventListener("input", debounce(warmMorphPacks, 80));
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") startCollide();
+  });
 }
 
 applyTheme(storedTheme());

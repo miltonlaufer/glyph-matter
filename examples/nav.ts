@@ -7,6 +7,7 @@ const FILES = [
   { file: "wind.html", label: "wind" },
   { file: "vortex.html", label: "vortex" },
   { file: "sequence.html", label: "sequence" },
+  { file: "collide.html", label: "collide" },
   { file: "image.html", label: "image" },
   { file: "webcam.html", label: "webcam" },
   { file: "audio.html", label: "audio" },

@@ -2,7 +2,7 @@
 export { GlyphMatter } from "./GlyphMatter.ts";
 export { loadFont, sampleText, layoutGlyphs } from "./font.ts";
 export type { FontSource } from "./font.ts";
-export { parsePack, packToJSON, packToModule, translatePack, scalePack, placePack } from "./pack.ts";
+export { parsePack, packToJSON, packToModule, translatePack, scalePack, placePack, mergePacks } from "./pack.ts";
 export { drawSamples, drawParticles, drawAutomata, drawRings, makeView, screenToWorld } from "./draw.ts";
 export type { DrawFit, DrawSamplesOptions, View, DrawablePoint, AutomataGrid } from "./draw.ts";
 export { displayInk, canvasDotRadius } from "./density.ts";
