@@ -96,4 +96,28 @@ describe("Sequence", () => {
     for (let i = 0; i < 40; i++) seq.tick(1 / 60);
     expect(world.glyphs.some((g) => g.ch === "O" || g.ch === "o")).toBe(true);
   });
+
+  it("collide appends stacked-pair then result steps", async () => {
+    const { gm, world } = await ready();
+    const seq = new Sequence(gm, world, {
+      loop: false,
+      dissolveT: 0.2,
+      dissolveDropT: 0.05,
+      travelT: 0.1,
+      formT: 0.1,
+    }).collide({
+      up: "I",
+      down: "O",
+      into: "V",
+      effect: false,
+      apart: 0.1,
+      collide: 0.1,
+      hold: 0.3,
+    });
+    expect(seq.steps).toHaveLength(3);
+    seq.play();
+    expect(world.particles.length).toBeGreaterThan(4);
+    for (let i = 0; i < 80; i++) seq.tick(1 / 60);
+    expect(world.glyphs.some((g) => g.ch === "V" || g.ch === "v")).toBe(true);
+  });
 });

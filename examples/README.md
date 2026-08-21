@@ -21,7 +21,7 @@ npm run dev
 | Wind — traveling gust (sawtooth) | http://localhost:5173/examples/wind.html | [wind](https://www.miltonlaufer.com.ar/glyph-matter-examples/wind.html) |
 | Vortex — swirl well below the word | http://localhost:5173/examples/vortex.html | [vortex](https://www.miltonlaufer.com.ar/glyph-matter-examples/vortex.html) |
 | Sequence — `addAnimationSteps` + wind / attract | http://localhost:5173/examples/sequence.html | [sequence](https://www.miltonlaufer.com.ar/glyph-matter-examples/sequence.html) |
-| Collide — `signified` + `signifier` → `sign` (vortex at the meeting point) | http://localhost:5173/examples/collide.html | [collide](https://www.miltonlaufer.com.ar/glyph-matter-examples/collide.html) |
+| Collide — `Sequence.collide`: `signified` + `signifier` → `sign` | http://localhost:5173/examples/collide.html | [collide](https://www.miltonlaufer.com.ar/glyph-matter-examples/collide.html) |
 | Image — `glyph` → sunset → `matter` → book (Canny contours) | http://localhost:5173/examples/image.html | [image](https://www.miltonlaufer.com.ar/glyph-matter-examples/image.html) |
 | Webcam — one still per camera step + mic wind and meter | http://localhost:5173/examples/webcam.html | [webcam](https://www.miltonlaufer.com.ar/glyph-matter-examples/webcam.html) |
 | Audio — wind from *Terminal Hours* (stop, optional analyser lowpass) | http://localhost:5173/examples/audio.html | [audio](https://www.miltonlaufer.com.ar/glyph-matter-examples/audio.html) |

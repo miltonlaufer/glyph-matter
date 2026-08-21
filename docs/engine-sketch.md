@@ -137,7 +137,8 @@ The loop above is running in `glyph-matter`:
 | Sample (live font, image, or shipped pack) | `GlyphMatter`, `sample.ts`, `image.ts`, `pack.ts` |
 | Point body + identity (`g`, home pose) | `SamplePoint`, `Particle` |
 | HomeSpring + gas + pointer | `World` (`legibility`, `gas`) |
-| Word → word pairing; extras bud from live ink | `morph.ts` |
+| Word → word pairing; extras bud from live ink | `morph.ts`, `World.morphTo` |
+| Two words → one | workbench in-between / kind **collide**, `World.collide`, `Sequence.collide` |
 | Field body (pixel grid) | `automata.ts` |
 | Contour body (growing outlines) | `differential.ts` |
 | Draw | `draw.ts` (canvas 2D) |

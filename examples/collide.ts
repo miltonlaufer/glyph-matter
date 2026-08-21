@@ -7,10 +7,9 @@ import {
   GlyphMatter,
   Sequence,
   World,
+  collideVortex,
   drawParticles,
   makeView,
-  mergePacks,
-  placePack,
   type ParticleEffect,
 } from "../src/lib/index.ts";
 import { mountSiteNav } from "./nav.ts";
@@ -30,10 +29,6 @@ const CONFIG = {
   down: "signifier",
   into: "sign",
   effect: "vortex" as HitKind,
-  /** Vertical offset of the stacked words, in em. */
-  gap: 0.95,
-  /** How close they sit at the meeting point, in em. */
-  meet: 0.12,
 };
 
 function query(name: string, fallback: string): string {
@@ -54,38 +49,18 @@ const effectKind = hitKind(query("effect", document.body.dataset.effect ?? CONFI
 const gm = new GlyphMatter(SAMPLE);
 await gm.sampleFromFont(FONT_URL, up);
 const em = gm.fontSize;
-const rawUp = gm.exportSamples();
-const rawDown = gm.samplePack(down);
-const rawInto = gm.samplePack(into);
-
 const cx = 0;
 const cy = 0;
-const placedUp = placePack(rawUp, cx, cy - em * CONFIG.gap);
-const placedDown = placePack(rawDown, cx, cy + em * CONFIG.gap);
-const pairApart = mergePacks(placedUp, placedDown);
-const pairMeet = mergePacks(
-  placePack(rawUp, cx, cy - em * CONFIG.meet),
-  placePack(rawDown, cx, cy + em * CONFIG.meet),
-);
-const result = placePack(rawInto, cx, cy);
-const hit = { x: cx, y: cy };
 
 function collisionEffect(kind: HitKind): ParticleEffect {
-  const radius = em * 1.55;
   if (kind === "attract") {
-    return { kind: "attract", x: hit.x, y: hit.y, strength: 240, radius: em * 1.85 };
+    return { kind: "attract", x: cx, y: cy, strength: 240, radius: em * 1.85 };
   }
   if (kind === "repel") {
-    return { kind: "repel", x: hit.x, y: hit.y, strength: 190, radius };
+    return { kind: "repel", x: cx, y: cy, strength: 190, radius: em * 1.55 };
   }
-  return { kind: "vortex", x: hit.x, y: hit.y, strength: 420, radius: em * 1.4 };
+  return collideVortex(cx, cy, em);
 }
-
-const smash = collisionEffect(effectKind);
-const viewBounds = unionAll(
-  [pairApart.bounds, pairMeet.bounds, result.bounds],
-  em * 0.55,
-);
 
 const world = new World().configure({
   stiffness: 34,
@@ -95,36 +70,20 @@ const world = new World().configure({
 });
 
 const sequence = new Sequence(gm, world, { formT: 1.2, travelT: 0.7 })
-  .addAnimationSteps([
-    {
-      pack: pairApart,
-      duration: 1.55,
-      stiffness: 34,
-      damping: 10,
-      legibility: 1,
-      effects: [],
-    },
-    {
-      pack: pairMeet,
-      duration: 1.4,
-      inBetween: "spring",
-      stiffness: 22,
-      damping: 7,
-      legibility: 0.88,
-      effects: [smash],
-    },
-    {
-      pack: result,
-      duration: 2.8,
-      inBetween: "dissolve",
-      stiffness: 52,
-      damping: 14,
-      gas: 40,
-      legibility: 1,
-      effects: [],
-    },
-  ])
+  .collide({
+    up,
+    down,
+    into,
+    x: cx,
+    y: cy,
+    effect: collisionEffect(effectKind),
+  })
   .play();
+
+const viewBounds = unionAll(
+  sequence.steps.map((step) => step.pack?.bounds).filter((b) => b != null),
+  em * 0.55,
+);
 
 const setPointerView = followPointer(canvas, world);
 

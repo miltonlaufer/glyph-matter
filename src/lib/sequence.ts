@@ -1,7 +1,7 @@
 import type { GlyphMatter } from "./GlyphMatter.ts";
-import { translatePack } from "./pack.ts";
+import { mergePacks, placePack, translatePack } from "./pack.ts";
 import type { SamplePack } from "./types.ts";
-import type { World } from "./world.ts";
+import { collideVortex, type World } from "./world.ts";
 import type { ParticleEffect } from "./effects.ts";
 
 export type InBetween = "spring" | "dissolve";
@@ -35,6 +35,28 @@ export type SequenceOptions = {
   dissolveT?: number;
   travelT?: number;
   formT?: number;
+};
+
+/** Timed two-words-into-one recipe for {@link Sequence.collide}. */
+export type CollideSteps = {
+  up: string | SamplePack;
+  down: string | SamplePack;
+  into: string | SamplePack;
+  x?: number;
+  y?: number;
+  /** Vertical half-gap of the stacked pair, in em. Default `0.95`. */
+  gap?: number;
+  /** How close the pair sits at the meeting point, in em. Default `0.12`. */
+  meet?: number;
+  /** Force while they meet. Omit for a vortex; `false` for none. */
+  effect?: ParticleEffect | false;
+  apart?: number;
+  collide?: number;
+  hold?: number;
+  gas?: number;
+  stiffness?: number;
+  damping?: number;
+  legibility?: number;
 };
 
 type Phase = "idle" | "hold" | "dissolve" | "travel" | "form";
@@ -103,6 +125,57 @@ export class Sequence {
     return this;
   }
 
+  /**
+   * Abbreviation: stacked `up` + `down`, spring together, dissolve into `into`.
+   * Uses {@link World.collide}'s layout; the vortex only runs on the meeting step.
+   */
+  collide(options: CollideSteps): this {
+    const up = this.asPack(options.up);
+    const down = this.asPack(options.down);
+    const into = this.asPack(options.into);
+    const em = up.sampling.fontSize;
+    const x = options.x ?? 0;
+    const y = options.y ?? 0;
+    const gap = (options.gap ?? 0.95) * em;
+    const meet = (options.meet ?? 0.12) * em;
+    const pairApart = mergePacks(placePack(up, x, y - gap), placePack(down, x, y + gap));
+    const pairMeet = mergePacks(placePack(up, x, y - meet), placePack(down, x, y + meet));
+    const result = placePack(into, x, y);
+    const smash =
+      options.effect === false ? [] : [options.effect ?? collideVortex(x, y, em)];
+    const restore = options.legibility ?? 1;
+    return this.addAnimationSteps([
+      {
+        pack: pairApart,
+        duration: options.apart ?? 1.55,
+        stiffness: options.stiffness ?? 34,
+        damping: options.damping ?? 10,
+        gas: options.gas,
+        legibility: restore,
+        effects: [],
+      },
+      {
+        pack: pairMeet,
+        duration: options.collide ?? 1.4,
+        inBetween: "spring",
+        stiffness: 22,
+        damping: 7,
+        legibility: Math.max(0.72, restore * 0.88),
+        effects: smash,
+      },
+      {
+        pack: result,
+        duration: options.hold ?? 2.8,
+        inBetween: "dissolve",
+        stiffness: 52,
+        damping: 14,
+        gas: 40,
+        legibility: restore,
+        effects: [],
+      },
+    ]);
+  }
+
   clear(): this {
     this.steps = [];
     this.index = -1;
@@ -162,6 +235,10 @@ export class Sequence {
     this.elapsed = 0;
     this.restore = first.legibility ?? 1;
     this.world.configure({ legibility: this.restore });
+  }
+
+  private asPack(source: string | SamplePack): SamplePack {
+    return typeof source === "string" ? this.gm.samplePack(source) : source;
   }
 
   private packFor(step: AnimationStep): SamplePack {

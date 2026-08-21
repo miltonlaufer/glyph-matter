@@ -6,8 +6,6 @@ import {
   createTestFont,
   drawParticles,
   makeView,
-  mergePacks,
-  placePack,
   screenToWorld,
 } from "../lib/index.ts";
 import type {
@@ -75,6 +73,7 @@ const morphPanel = must(document.querySelector<HTMLElement>("#morph-panel"), "mo
 const loopWordsEl = must(document.querySelector<HTMLElement>("#loopWords"), "loopWords");
 const addWordBtn = must(document.querySelector<HTMLButtonElement>("#addWord"), "addWord");
 const morphBtn = must(document.querySelector<HTMLButtonElement>("#morph"), "morph");
+const morphHint = must(document.querySelector<HTMLElement>("#morphHint"), "morphHint");
 const morphLoop = must(document.querySelector<HTMLInputElement>("#morphLoop"), "morphLoop");
 const morphProcess = must(
   document.querySelector<HTMLSelectElement>("#morphProcess"),
@@ -181,6 +180,26 @@ function morphInBetween(): InBetween {
   return morphProcess.value === "spring" ? "spring" : "dissolve";
 }
 
+function collideFromMorph(): boolean {
+  return animationKind() === "morph" && morphProcess.value === "collide";
+}
+
+function collideSketch(): boolean {
+  return animationKind() === "collide" || collideFromMorph();
+}
+
+function syncMorphHint(): void {
+  if (morphProcess.value === "collide") {
+    morphHint.textContent =
+      "The first three words are the collision: the first two sit apart, spring into a meeting point, and become the third. Force below is the smash (vortex if you have none).";
+    morphBtn.textContent = "collide";
+  } else {
+    morphHint.textContent =
+      "The first word is “text” above. Add more words to the loop. The in-between is how ink travels from one word to the next.";
+    morphBtn.textContent = "morph";
+  }
+}
+
 function applySettings(): void {
   contourSpacingVal.textContent = contourSpacing.value;
   fillSpacingVal.textContent = fillSpacing.value;
@@ -261,7 +280,7 @@ function syncEffectPanels(): void {
 
 function applyEffectFromUi(): void {
   world.clearEffects();
-  if (animationKind() === "collide" && sequence && sequence.index !== 1) return;
+  if (collideSketch() && sequence && sequence.index !== 1) return;
   const kind = effectKind.value;
   if (kind === "none") return;
   const at = pointWell();
@@ -444,9 +463,17 @@ function startMorph(): void {
     setStatus("need a live font to morph");
     return;
   }
+  const words = loopWords();
+  if (morphProcess.value === "collide") {
+    if (words.length < 3) {
+      setStatus("collide needs three words (two that meet, then the result)");
+      return;
+    }
+    runCollide(words[0]!, words[1]!, words[2]!, morphLoop.checked);
+    return;
+  }
   clearCollideLock();
   applySettings();
-  const words = loopWords();
   if (words.length < 2) {
     setStatus("add at least two words to the loop");
     return;
@@ -498,61 +525,47 @@ function startCollide(): void {
     setStatus("need word up, word down, and a collision word");
     return;
   }
+  runCollide(up, down, into, collideLoop.checked);
+}
+
+function ensureCollideForce(): void {
+  if (effectKind.value !== "none") return;
+  effectKind.value = "vortex";
+  effectX.value = "0";
+  effectY.value = "0";
+  syncEffectPanels();
+}
+
+function runCollide(up: string, down: string, into: string, loop: boolean): void {
   applySettings();
   const em = gm.fontSize;
   const cx = 0;
   const cy = 0;
-  const rawUp = packFor(up);
-  const rawDown = packFor(down);
-  const rawInto = packFor(into);
-  const pairApart = mergePacks(
-    placePack(rawUp, cx, cy - em * 0.95),
-    placePack(rawDown, cx, cy + em * 0.95),
-  );
-  const pairMeet = mergePacks(
-    placePack(rawUp, cx, cy - em * 0.12),
-    placePack(rawDown, cx, cy + em * 0.12),
-  );
-  const result = placePack(rawInto, cx, cy);
-  const restore = sliderLegibility();
+  ensureCollideForce();
   stopSequence();
   collideHit = { x: cx, y: cy };
-  lockedView = unionBoxes([pairApart.bounds, pairMeet.bounds, result.bounds], em * 0.55);
   sequence = new Sequence(gm, world, {
-    loop: collideLoop.checked,
+    loop,
     formT: 1.2,
     travelT: 0.7,
   })
-    .addAnimationSteps([
-      {
-        pack: pairApart,
-        duration: HOLD_T * 1.8,
-        stiffness: 34,
-        damping: 10,
-        legibility: 1,
-        effects: [],
-      },
-      {
-        pack: pairMeet,
-        duration: HOLD_T * 1.6,
-        inBetween: "spring",
-        stiffness: 22,
-        damping: 7,
-        legibility: Math.max(0.72, restore * 0.88),
-        effects: [],
-      },
-      {
-        pack: result,
-        duration: HOLD_T * 3.2,
-        inBetween: "dissolve",
-        stiffness: 52,
-        damping: 14,
-        gas: 40,
-        legibility: 1,
-        effects: [],
-      },
-    ])
+    .collide({
+      up,
+      down,
+      into,
+      x: cx,
+      y: cy,
+      apart: HOLD_T * 1.8,
+      collide: HOLD_T * 1.6,
+      hold: HOLD_T * 3.2,
+      effect: false,
+      legibility: 1,
+    })
     .play();
+  lockedView = unionBoxes(
+    sequence.steps.flatMap((step) => (step.pack ? [step.pack.bounds] : [])),
+    em * 0.55,
+  );
   applyEffectFromUi();
   setStatus(`collide · ${up} + ${down} → ${into}`);
 }
@@ -567,6 +580,7 @@ function syncAnimationPanel(): void {
   fieldPanel.hidden = kind !== "field";
   morphPanel.hidden = kind !== "morph";
   collidePanel.hidden = kind !== "collide";
+  syncMorphHint();
   if (kind === "field") {
     clearCollideLock();
     stopSequence();
@@ -575,13 +589,7 @@ function syncAnimationPanel(): void {
     stopSequence();
     warmMorphPacks();
   } else {
-    if (effectKind.value === "none") {
-      effectKind.value = "vortex";
-      effectX.value = "0";
-      effectY.value = "0";
-      syncEffectPanels();
-      applyEffectFromUi();
-    }
+    ensureCollideForce();
     warmMorphPacks();
     if (gm.hasFont()) startCollide();
   }
@@ -708,6 +716,8 @@ collideLoop.addEventListener("change", () => {
   }
 });
 morphProcess.addEventListener("change", () => {
+  syncMorphHint();
+  if (morphProcess.value === "collide") ensureCollideForce();
   if (sequenceDriving() && animationKind() === "morph") startMorph();
 });
 effectKind.addEventListener("change", () => {
@@ -853,7 +863,7 @@ let last = performance.now();
 function tick(now: number): void {
   const dt = Math.min((now - last) / 1000, 1 / 30);
   last = now;
-  if (animationKind() === "collide") applyEffectFromUi();
+  if (collideSketch()) applyEffectFromUi();
   if (sequenceDriving()) sequence?.tick(dt);
   else world.step(dt);
   paint();
@@ -872,6 +882,14 @@ for (const input of [collideUp, collideDown, collideInto]) {
 }
 
 applyTheme(storedTheme());
+const animationQuery = new URLSearchParams(location.search).get("animation");
+if (animationQuery === "field" || animationQuery === "morph" || animationQuery === "collide") {
+  animationSelect.value = animationQuery;
+}
+const inBetweenQuery = new URLSearchParams(location.search).get("inBetween");
+if (inBetweenQuery === "spring" || inBetweenQuery === "dissolve" || inBetweenQuery === "collide") {
+  morphProcess.value = inBetweenQuery;
+}
 syncEffectPanels();
 applySettings();
 syncAnimationPanel();

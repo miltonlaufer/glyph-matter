@@ -105,10 +105,11 @@
           <select id="morphProcess">
             <option value="spring">particles (spring)</option>
             <option value="dissolve" selected>dissolve (word → gas → word)</option>
+            <option value="collide">collide (two words → one)</option>
             <!-- parked: automata, organic growth, differential growth -->
           </select>
         </label>
-        <p class="hint">
+        <p class="hint" id="morphHint">
           The first word is “text” above. Add more words to the loop.
           The in-between is how ink travels from one word to the next.
         </p>
@@ -136,7 +137,8 @@
         </label>
         <p class="hint">
           Two words sit apart, spring into a meeting point, then become the
-          third. Force below is the collision (vortex if you have none).
+          third. Same recipe as in-between “collide” under word → word.
+          Force below is the collision (vortex if you have none).
         </p>
       </div>
 

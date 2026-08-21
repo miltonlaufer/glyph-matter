@@ -58,6 +58,29 @@ describe("World", () => {
     expect(world.meanHomeDistance()).toBeLessThan(2);
   });
 
+  it("collide stacks two words then retargets homes to a third", async () => {
+    const up = await packFor("I");
+    const down = await packFor("O");
+    const into = await packFor("V");
+    const world = new World().configure({ legibility: 1, gas: 0 });
+    world.collide(up, down, into, { effect: false });
+    expect(world.meanHomeDistance()).toBeGreaterThan(8);
+    const spread = world.meanHomeDistance();
+    for (let i = 0; i < 90; i++) world.step(1 / 60);
+    expect(world.meanHomeDistance()).toBeLessThan(spread * 0.35);
+    expect(world.glyphs.some((g) => g.ch === "V" || g.ch === "v")).toBe(true);
+  });
+
+  it("collide adds a vortex unless effect is false", async () => {
+    const up = await packFor("I");
+    const down = await packFor("O");
+    const into = await packFor("V");
+    const withForce = new World().collide(up, down, into);
+    expect(withForce.effects[0]?.kind).toBe("vortex");
+    const quiet = new World().collide(up, down, into, { effect: false });
+    expect(quiet.effects).toHaveLength(0);
+  });
+
   it("removes exiting particles once they reach home", () => {
     const p = {
       x: 10,

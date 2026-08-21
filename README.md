@@ -61,8 +61,10 @@ npm run dev
 ```
 
 Open `http://localhost:5173/` for the interactive workbench (font sampling,
-word→word morph, collide, dissolve, image contours, effects). On a narrow screen the
-sidebar hides behind a hamburger at the top left.
+word→word morph, collide as an in-between or animation kind, dissolve, image
+contours, effects). On a narrow screen the sidebar hides behind a hamburger at
+the top left. Deep-link collide with `?animation=collide` or
+`?inBetween=collide`.
 
 ![The glyph-matter workbench: sidebar controls and a dissolving word on the canvas](docs/media/workbench.png)
 
@@ -126,6 +128,24 @@ Word→word morph (shared letters keep their ink):
 ```ts
 const next = matter.samplePack("matter");
 world.morphTo(next, "origin");
+```
+
+Two words into a third — `World.collide` is `placePack` + `mergePacks` + `morphTo`:
+
+```ts
+world.collide(
+  matter.samplePack("signified"),
+  matter.samplePack("signifier"),
+  matter.samplePack("sign"),
+);
+```
+
+Timed, with a hold then a swirl then a readable third word:
+
+```ts
+new Sequence(gm, world)
+  .collide({ up: "signified", down: "signifier", into: "sign" })
+  .play();
 ```
 
 Or a timed list — `Sequence` owns the in-between; you still own the render loop:
@@ -215,7 +235,7 @@ Publish a fresh copy of the live folder with `npm run build:examples` (writes `.
 
 **Audio beats** — same loop. Kick **onsets** punch the traveling gust and set its period (gap between kicks). Bass energy (20–280 Hz) drives the vortex; midrange melody loosens the gas; hats/snares add to the gust.
 
-**Collide** — two words at once (`signified` above, `signifier` below) spring into a shared point and dissolve into `sign`. The meeting force is a **vortex** by default; `?effect=attract` or `?effect=repel`, and `?up=&down=&into=` change the words.
+**Collide** — two words at once (`signified` above, `signifier` below) spring into a shared point and dissolve into `sign`. `World.collide` / `Sequence.collide` on the library; the meeting force is a **vortex** by default (`?effect=attract` or `?effect=repel`, and `?up=&down=&into=` change the words).
 
 ![signified and signifier colliding into the word sign](docs/media/collide.gif)
 
@@ -295,7 +315,7 @@ export function GlyphField({ text = "glyph" }: { text?: string }) {
 }
 ```
 
-Word→word is the same world: call `world.morphTo(matter.samplePack("matter"), "origin")` from a button handler, or drive a `Sequence` with `show.tick(dt)` inside the frame loop.
+Word→word is the same world: call `world.morphTo(matter.samplePack("matter"), "origin")` from a button handler, `world.collide(up, down, into)` for two words becoming a third, or drive a `Sequence` with `show.tick(dt)` inside the frame loop.
 
 ## Using with Vue.js
 

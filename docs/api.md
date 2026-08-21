@@ -9,6 +9,7 @@ import {
   World,
   Sequence,
   applyEffect,
+  collideVortex,
   Automata,
   DifferentialGrowth,
   loadFont,
@@ -496,6 +497,22 @@ Snap every particle to its home and zero velocity.
 Retarget homes to another sampled word. Live positions stay put. Matching
 rules (see `morphParticles` below). Updates `glyphs` and `fontSize`.
 
+### `collide(up, down, into, options?: CollideOptions): this`
+
+Two words becoming a third. Loads `up` above `down`, then `morphTo(into)` at
+the meeting point so springs carry the stacked ink into the result.
+Abbreviation of `placePack` + `mergePacks` + `morphTo`. Omit `effect` for a
+vortex at `(x, y)`; pass `effect: false` for none.
+
+```ts
+world.collide(signified, signifier, sign);
+world.step(dt);
+```
+
+`CollideOptions`: `x`, `y` (meeting point, default `0,0`), `gap` (em,
+default `0.95`), `effect` (`ParticleEffect` or `false`), `align` (same as
+`morphTo`). `collideVortex(x, y, em)` is the default force.
+
 ### `homeBounds(): Bounds`
 
 Bounds of living particles' homes (or all particles if none are living).
@@ -596,8 +613,16 @@ const show = new Sequence(gm, world, { loop: true })
 show.tick(dt); // timeline + world.step
 ```
 
-Driving `world.morphTo`, `world.configure`, and `world.step` yourself is still
-the fully manual path — `Sequence` is optional sugar.
+Driving `world.morphTo` / `world.collide`, `world.configure`, and `world.step`
+yourself is still the fully manual path — `Sequence` is optional sugar.
+
+Two words into one is `Sequence.collide` (timed) or `World.collide` (one shot):
+
+```ts
+new Sequence(gm, world)
+  .collide({ up: "signified", down: "signifier", into: "sign" })
+  .play();
+```
 
 ### `AnimationStep`
 
@@ -622,12 +647,23 @@ the fully manual path — `Sequence` is optional sugar.
 | --- | --- |
 | `addAnimationStep(step)` | Append one step |
 | `addAnimationSteps(steps)` | Append many |
+| `collide(options)` | Append stacked `up` + `down` → `into` (vortex on the meeting step) |
 | `play()` | Load the first word; `tick` will advance |
 | `pause()` | Freeze the timeline (`tick` still steps physics) |
 | `reset()` | First word, paused |
 | `clear()` | Drop all steps |
 | `tick(dt)` | Advance timeline if playing, then `world.step(dt)` |
 | `currentStep()` | Active step, or `null` |
+
+### `collide(options: CollideSteps): this`
+
+Append the stacked-pair recipe: `up` above `down`, spring into a meeting
+point, dissolve into `into`. The vortex (or `effect`) runs only on the
+meeting step so the result can lock. `up` / `down` / `into` are words or
+ready `SamplePack`s. Optional: `x`, `y`, `gap`, `meet`, `apart`, `collide`,
+`hold` (seconds), physics knobs. Pass `effect: false` to drive the force
+yourself (as the workbench does). The workbench exposes the same recipe as
+animation kind **collide** and as in-between **collide** (first three words).
 
 Public fields: `steps`, `index`, `phase`, `elapsed`, `loop`, `playing`, `restore`.
 

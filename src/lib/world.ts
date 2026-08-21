@@ -1,4 +1,5 @@
 import { boundsOf } from "./path.ts";
+import { mergePacks, placePack } from "./pack.ts";
 import { morphParticles, type MorphAlign } from "./morph.ts";
 import { applyEffect, type ParticleEffect } from "./effects.ts";
 import type { GlyphRecord, SampleKind, SamplePack } from "./types.ts";
@@ -39,10 +40,31 @@ export type WorldOptions = {
   fade?: number;
 };
 
+/** Options for {@link World.collide}. */
+export type CollideOptions = {
+  /** Meeting point x. Default `0`. */
+  x?: number;
+  /** Meeting point y. Default `0`. */
+  y?: number;
+  /** Vertical half-gap between the two source words, in em. Default `0.95`. */
+  gap?: number;
+  /**
+   * Force at the meeting point. Omit for a vortex; pass `false` to skip.
+   */
+  effect?: ParticleEffect | false;
+  align?: MorphAlign;
+};
+
+/** Default collision vortex used by {@link World.collide}. */
+export function collideVortex(x: number, y: number, em: number): ParticleEffect {
+  return { kind: "vortex", x, y, strength: 420, radius: em * 1.4 };
+}
+
 /**
  * Particle field for a sampled word. Springs pull toward homes;
  * `legibility` interpolates between letter and gas. {@link World.morphTo}
  * retargets homes so ink travels from one word to another.
+ * {@link World.collide} is two words becoming a third.
  */
 export class World {
   particles: Particle[] = [];
@@ -194,6 +216,29 @@ export class World {
     });
     this.fontSize = pack.sampling.fontSize;
     return this;
+  }
+
+  /**
+   * Two words becoming a third: load `up` above `down`, then {@link World.morphTo}
+   * `into` at the meeting point. Live ink stays stacked; springs carry it
+   * into the result. Abbreviation of `placePack` + `mergePacks` + `morphTo`.
+   */
+  collide(
+    up: SamplePack,
+    down: SamplePack,
+    into: SamplePack,
+    options: CollideOptions = {},
+  ): this {
+    const em = up.sampling.fontSize;
+    const x = options.x ?? 0;
+    const y = options.y ?? 0;
+    const gap = (options.gap ?? 0.95) * em;
+    this.load(
+      mergePacks(placePack(up, x, y - gap), placePack(down, x, y + gap)),
+    );
+    if (options.effect === false) this.clearEffects();
+    else this.setEffects([options.effect ?? collideVortex(x, y, em)]);
+    return this.morphTo(placePack(into, x, y), options.align ?? "origin");
   }
 
   /** Axis-aligned box of living particles' homes. */
